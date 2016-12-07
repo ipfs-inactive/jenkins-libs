@@ -14,7 +14,7 @@ def call(body) {
 				sh "${nodeHome}/bin/npm install"
 			}
 			stage("Test - ${config.version}") {
-				sh "${nodeHome}/bin/npm run test:node"
+				sh "${nodeHome}/bin/npm test"
 			}
 		}
 	}
