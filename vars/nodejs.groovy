@@ -5,16 +5,15 @@ def call(body) {
 	body()
 
 	node {
-		def nodeHome = tool name: 'NodeJS-5', type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation'
+		def nodeHome = tool name: config.version, type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation'
 		withEnv(["PATH=${env.PATH}:${nodeHome}/bin"]) {
-			stage('Checkout') {
+			stage("Checkout - ${config.version}") {
 				checkout scm
 			}
-			stage('Build') {
-				sh "env | sort"
+			stage("Build - ${config.version}") {
 				sh "${nodeHome}/bin/npm install"
 			}
-			stage('Test') {
+			stage("Test - ${config.version}") {
 				sh "${nodeHome}/bin/npm run test:node"
 			}
 		}
