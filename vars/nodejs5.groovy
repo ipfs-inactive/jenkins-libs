@@ -5,7 +5,7 @@ def call(body) {
 	body()
 
 	node {
-		def nodeHome = tool name: 'NodeJS-5', type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation'
+		def nodeHome = tool name: 'NodeJS-6', type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation'
 		withEnv(["PATH=${env.PATH}:${nodeHome}/bin"]) {
 			stage('Checkout') {
 				checkout scm
