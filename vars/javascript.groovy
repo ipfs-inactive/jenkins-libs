@@ -7,7 +7,6 @@ def call() {
    "Windows": {
     node(label: 'windows') {
      ansiColor('xterm') {
-      cleanWs()
       checkout scm
       fileExists 'package.json'
       nodejs('8.7.0') {
@@ -22,7 +21,6 @@ def call() {
    "macOS": {
     node(label: 'macos') {
      ansiColor('xterm') {
-      cleanWs()
       checkout scm
       fileExists 'package.json'
       nodejs('8.7.0') {
@@ -35,7 +33,6 @@ def call() {
    "Linux": {
     node(label: 'linux') {
      ansiColor('xterm') {
-      cleanWs()
       checkout scm
       fileExists 'package.json'
       nodejs('8.7.0') {
