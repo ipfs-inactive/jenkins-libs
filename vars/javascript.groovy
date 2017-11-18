@@ -9,7 +9,7 @@ def call() {
      ansiColor('xterm') {
       checkout scm
       fileExists 'package.json'
-      nodejs('8.7.0') {
+      nodejs('9.2.0') {
        bat 'npm config set msvs_version 2015 --global'
        bat 'npm config set unsafe-perm=true --global'
        bat 'npm install --verbose'
@@ -23,7 +23,7 @@ def call() {
      ansiColor('xterm') {
       checkout scm
       fileExists 'package.json'
-      nodejs('8.7.0') {
+      nodejs('9.2.0') {
        sh 'npm install --verbose'
        sh 'npm test'
       }
@@ -35,7 +35,7 @@ def call() {
      ansiColor('xterm') {
       checkout scm
       fileExists 'package.json'
-      nodejs('8.7.0') {
+      nodejs('9.2.0') {
        sh 'npm install --verbose'
        wrap([$class: 'Xvfb', parallelBuild: true]) {
         sh 'npm test'
