@@ -10,10 +10,9 @@ def call() {
       checkout scm
       fileExists 'package.json'
       nodejs('9.2.0') {
-       bat 'npm config set msvs_version 2015 --global'
-       bat 'npm config set unsafe-perm=true --global'
-       bat 'npm install --verbose'
-       bat 'npm test'
+       bat 'npm install --global yarn@1.3.2'
+       bat 'yarn'
+       bat 'yarn test'
       }
      }
     }
@@ -24,8 +23,9 @@ def call() {
       checkout scm
       fileExists 'package.json'
       nodejs('9.2.0') {
-       sh 'npm install --verbose'
-       sh 'npm test'
+       sh 'npm install --global yarn@1.3.2'
+       sh 'yarn'
+       sh 'yarn test'
       }
      }
     }
@@ -36,9 +36,10 @@ def call() {
       checkout scm
       fileExists 'package.json'
       nodejs('9.2.0') {
-       sh 'npm install --verbose'
+       sh 'npm install --global yarn@1.3.2'
+       sh 'yarn'
        wrap([$class: 'Xvfb', parallelBuild: true]) {
-        sh 'npm test'
+        sh 'yarn test'
        }
       }
      }
