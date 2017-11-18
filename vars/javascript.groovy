@@ -12,6 +12,7 @@ def call() {
       fileExists 'package.json'
       nodejs('8.7.0') {
        bat 'npm config set msvs_version 2015 --global'
+       bat 'npm config set unsafe-perm=true'
        bat 'npm install --verbose'
        bat 'npm test'
       }
