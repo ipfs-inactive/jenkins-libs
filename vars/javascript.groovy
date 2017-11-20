@@ -11,6 +11,7 @@ def call() {
       fileExists 'package.json'
       nodejs('9.2.0') {
        bat 'npm install --global yarn@1.3.2'
+       bat 'yarn config set msvs_version 2015 --global'
        bat 'yarn --mutex network'
        bat 'yarn test'
       }
