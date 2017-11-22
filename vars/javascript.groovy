@@ -7,6 +7,7 @@ def call() {
    "Windows": {
     node(label: 'windows') {
      ansiColor('xterm') {
+      bat 'git config --global core.autocrlf input'
       checkout scm
       fileExists 'package.json'
       nodejs('9.2.0') {
