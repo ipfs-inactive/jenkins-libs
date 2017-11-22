@@ -11,10 +11,10 @@ def call() {
       checkout scm
       fileExists 'package.json'
       nodejs('9.2.0') {
-       bat 'npm install --global yarn@1.3.2'
-       bat 'yarn config set msvs_version 2015 --global'
-       bat 'yarn --mutex network'
-       bat 'yarn test'
+       bat 'npm install yarn@1.3.2'
+       bat './node_modules/.bin/yarn config set msvs_version 2015 --global'
+       bat './node_modules/.bin/yarn --mutex network'
+       bat './node_modules/.bin/yarn test'
       }
      }
     }
@@ -25,9 +25,9 @@ def call() {
       checkout scm
       fileExists 'package.json'
       nodejs('9.2.0') {
-       sh 'npm install --global yarn@1.3.2'
-       sh 'yarn --mutex network'
-       sh 'yarn test'
+       sh 'npm install yarn@1.3.2'
+       sh './node_modules/.bin/yarn --mutex network'
+       sh './node_modules/.bin/yarn test'
       }
      }
     }
@@ -38,10 +38,10 @@ def call() {
       checkout scm
       fileExists 'package.json'
       nodejs('9.2.0') {
-       sh 'npm install --global yarn@1.3.2'
-       sh 'yarn --mutex network'
-       wrap([$class: 'Xvfb']) {
-        sh 'yarn test'
+       sh 'npm install yarn@1.3.2'
+       sh './node_modules/.bin/yarn --mutex network'
+       wrap([$class: 'Xvfb', parallelBuild: true, autoDisplayName: true]) {
+        sh './node_modules/.bin/yarn test'
        }
       }
      }
