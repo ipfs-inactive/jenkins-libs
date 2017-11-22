@@ -40,7 +40,7 @@ def call() {
       nodejs('9.2.0') {
        sh 'npm install --global yarn@1.3.2'
        sh 'yarn --mutex network'
-       wrap([$class: 'Xvfb', parallelBuild: true]) {
+       wrap([$class: 'Xvfb']) {
         sh 'yarn test'
        }
       }
