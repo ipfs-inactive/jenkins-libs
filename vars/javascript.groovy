@@ -11,7 +11,7 @@ def call() {
       checkout scm
       fileExists 'package.json'
       nodejs('9.2.0') {
-       bat 'rmdir /s /q node_modules'
+       bat 'del /s /q node_modules'
        bat 'npm install yarn@1.3.2'
        bat './node_modules/.bin/yarn config set msvs_version 2015 --global'
        bat './node_modules/.bin/yarn --mutex network'
