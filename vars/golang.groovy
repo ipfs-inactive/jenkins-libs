@@ -1,22 +1,24 @@
-def call(body) {
-	def config = [:]
-	body.resolveStrategy = Closure.DELEGATE_FIRST
-	body.delegate = config
-	body()
-
-	node {
-		def goHome = tool name: 'Go174', type: 'org.jenkinsci.plugins.golang.GolangInstallation'
-		withEnv(["PATH=${env.PATH}:${goHome}/bin"]) {
-			stage("Checkout") {
-				checkout scm
-			}
-			stage("Build") {
-				sh "echo ${goHome}"
-				sh "${goHome}/bin/go get ./..."
-			}
-			stage("Test") {
-				sh "${goHome}/bin/go test ./..."
-			}
-		}
-	}
+def call() {
+  node(label: 'linux') {
+    ansiColor('xterm') {
+      env.GO_HOME = "${tool name: '1.9.2', type: 'go'}"
+      env.PATH="${env.GO_HOME}/bin:${env.PATH}"
+      env.PATH="${env.HOME}/go/bin:${env.PATH}"
+      stage("gx") {
+        sh 'go get -v github.com/whyrusleeping/gx'
+				sh 'go get -v github.com/whyrusleeping/gx-go'
+      }
+      stage("checkout") {
+        checkout scm
+      }
+      stage("deps") {
+        sh 'gx --verbose install --global'
+        sh 'gx-go rewrite'
+      }
+      stage('tests') {
+        sh "go test -v ./..."
+      }
+    }
+  }
 }
+
