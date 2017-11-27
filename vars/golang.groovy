@@ -6,7 +6,7 @@ def call() {
           ansiColor('xterm') {
             def root = tool name: '1.9.2', type: 'go'
             def jobNameArr = "${JOB_NAME}"
-            def jobName = jobNameArr.split("/")[0..1].join("\\\\")
+            def jobName = jobNameArr.split("/")[0..1].join("\\\\").toLowerCase()
             def originalWs = "${WORKSPACE}"
             ws("${originalWs}\\src\\github.com\\${jobName}") {
               withEnv(["GOROOT=${root}", "GOPATH=${originalWs}", "PATH=$PATH;${root}\\bin;${originalWs}\\bin"]) {
@@ -26,7 +26,7 @@ def call() {
           ansiColor('xterm') {
             def root = tool name: '1.9.2', type: 'go'
             def jobNameArr = "${JOB_NAME}"
-            def jobName = jobNameArr.split("/")[0..1].join("/")
+            def jobName = jobNameArr.split("/")[0..1].join("/").toLowerCase()
             def originalWs = "${WORKSPACE}"
             ws("${originalWs}/src/github.com/${jobName}") {
               withEnv(["GOROOT=${root}", "GOPATH=${originalWs}", "PATH=$PATH:${root}/bin:${originalWs}/bin"]) {
@@ -46,7 +46,7 @@ def call() {
           ansiColor('xterm') {
             def root = tool name: '1.9.2', type: 'go'
             def jobNameArr = "${JOB_NAME}"
-            def jobName = jobNameArr.split("/")[0..1].join("/")
+            def jobName = jobNameArr.split("/")[0..1].join("/").toLowerCase()
             def originalWs = "${WORKSPACE}"
             ws("${originalWs}/src/github.com/${jobName}") {
               withEnv(["GOROOT=${root}", "GOPATH=${originalWs}", "PATH=$PATH:${root}/bin:${originalWs}/bin"]) {
