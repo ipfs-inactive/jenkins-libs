@@ -29,6 +29,7 @@ def windowsStep () {
         bat yarnPath + ' --mutex network'
         // run actual tests
         bat yarnPath + ' make'
+				archiveArtifacts 'out/make/*'
       }
     }
   }
@@ -45,6 +46,7 @@ def unixStep(nodeLabel) {
         sh 'npm install yarn@' + yarnVersion
         sh yarnPath + ' --mutex network'
 				sh yarnPath + ' make'
+				archiveArtifacts 'out/make/*'
       }
     }
   }
