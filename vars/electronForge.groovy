@@ -11,7 +11,7 @@ import groovy.transform.Field
 @Field final String yarnPath = './node_modules/.bin/yarn'
 
 // Step for running tests on a specific nodejs version with windows
-def windowsStep (version) {
+def windowsStep () {
   node(label: 'windows') {
     ansiColor('xterm') {
       // need to make sure we're using the right line endings
@@ -35,12 +35,12 @@ def windowsStep (version) {
 }
 
 // Step for running tests on a specific nodejs version with unix compatible OS
-def unixStep(version, nodeLabel) {
+def unixStep(nodeLabel) {
   node(label: nodeLabel) {
     ansiColor('xterm') {
       checkout scm
       fileExists 'package.json'
-      nodejs(version) {
+      nodejs('9.2.0') {
         sh 'rm -rf node_modules/'
         sh 'npm install yarn@' + yarnVersion
         sh yarnPath + ' --mutex network'
@@ -51,13 +51,13 @@ def unixStep(version, nodeLabel) {
 }
 
 // Helper function for getting the right platform + version
-def getStep(os, version) {
+def getStep(os) {
   return {
     if (os == 'macos' || os == 'linux') {
-      return unixStep(version, os)
+      return unixStep(os)
     }
     if (os == 'windows') {
-      return windowsStep(version)
+      return windowsStep()
     }
   }
 }
@@ -67,14 +67,12 @@ def call() {
  stage('Pre-Tests') {
   echo 'before tests'
  }
- stage('Tests') {
+ stage('Builds') {
   // Create map for all the os+version combinations
   def steps = [:]
   for (os in osToTests) {
-      for (nodejsVersion in nodejsVersionsToTest) {
-          def stepName = os + ' - ' + nodejsVersion
-          steps[(stepName)] = getStep(os, nodejsVersion)
-      }
+		def stepName = os + ' Build'
+		steps[(stepName)] = getStep(os)
   }
   // execute those steps in parallel
   parallel steps
