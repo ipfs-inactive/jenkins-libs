@@ -15,7 +15,7 @@ def call() {
                 checkout scm
                 bat 'gx --verbose install --global'
                 bat 'gx-go rewrite'
-                bat "go test -v ./..."
+                bat "go test ./..."
               }
             }
           }
@@ -35,7 +35,7 @@ def call() {
                 checkout scm
                 sh 'gx --verbose install --global'
                 sh 'gx-go rewrite'
-                sh "go test -v ./..."
+                sh "go test ./..."
               }
             }
           }
@@ -55,7 +55,7 @@ def call() {
                 checkout scm
                 sh 'gx --verbose install --global'
                 sh 'gx-go rewrite'
-                sh "go test -v ./..."
+                sh "go test ./..."
               }
             }
           }
