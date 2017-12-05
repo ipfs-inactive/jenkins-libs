@@ -1,4 +1,4 @@
-def call() {
+def call(testCommand = "go test ./...") {
   stage('tests') {
     parallel(
       windows: {
@@ -15,7 +15,7 @@ def call() {
                 checkout scm
                 bat 'gx --verbose install --global'
                 bat 'gx-go rewrite'
-                bat "go test ./..."
+                bat testCommand
               }
             }
           }
@@ -35,7 +35,7 @@ def call() {
                 checkout scm
                 sh 'gx --verbose install --global'
                 sh 'gx-go rewrite'
-                sh "go test ./..."
+                sh testCommand
               }
             }
           }
@@ -55,7 +55,7 @@ def call() {
                 checkout scm
                 sh 'gx --verbose install --global'
                 sh 'gx-go rewrite'
-                sh "go test ./..."
+                sh testCommand
               }
             }
           }
