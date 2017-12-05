@@ -27,9 +27,12 @@ def windowsStep () {
         bat yarnPath + ' config set msvs_version 2015 --global'
         // install dependencies with a mutex lock
         bat yarnPath + ' --mutex network'
-        // run actual tests
-        bat yarnPath + ' make'
-				archiveArtifacts 'out/make/*'
+        // inject correct path for squirrel
+        withEnv(["SQUIRREL_TEMP=${WORKSPACE}"]) {
+          // build binaries
+          bat yarnPath + ' make'
+        }
+        archiveArtifacts 'out\\make\\**\\*'
       }
     }
   }
@@ -45,8 +48,8 @@ def unixStep(nodeLabel) {
         sh 'rm -rf node_modules/'
         sh 'npm install yarn@' + yarnVersion
         sh yarnPath + ' --mutex network'
-				sh yarnPath + ' make'
-				archiveArtifacts 'out/make/*'
+        sh yarnPath + ' make'
+        archiveArtifacts 'out/make/*'
       }
     }
   }
@@ -73,8 +76,8 @@ def call() {
   // Create map for all the os+version combinations
   def steps = [:]
   for (os in osToTests) {
-		def stepName = os + ' Build'
-		steps[(stepName)] = getStep(os)
+    def stepName = os + ' Build'
+    steps[(stepName)] = getStep(os)
   }
   // execute those steps in parallel
   parallel steps
