@@ -13,7 +13,7 @@ def defVal (value, defaultValue) {
 }
 
 @Field def defaultEnv = ["CI=true"]
-@Field def defaultTest = "go test ./..."
+@Field def defaultTest = "go test -v ./..."
 
 def call(opts) {
   def env = defVal(opts.env, defaultEnv)
@@ -32,10 +32,17 @@ def call(opts) {
               withEnv(goEnv + env) {
                 bat 'go get -v github.com/whyrusleeping/gx'
                 bat 'go get -v github.com/whyrusleeping/gx-go'
+                bat 'go get -v github.com/jstemmer/go-junit-report'
                 checkout scm
                 bat 'gx --verbose install --global'
                 bat 'gx-go rewrite'
-                bat test
+                try {
+                  bat test + ' 2>&1 | go-junit-report > junit-report-windows.xml'
+                } catch (err) {
+                  throw err
+                } finally {
+                  junit 'junit-report-*.xml'
+                }
               }
             }
           }
@@ -53,10 +60,17 @@ def call(opts) {
               withEnv(goEnv + env) {
                 sh 'go get -v github.com/whyrusleeping/gx'
                 sh 'go get -v github.com/whyrusleeping/gx-go'
+                sh 'go get -v github.com/jstemmer/go-junit-report'
                 checkout scm
                 sh 'gx --verbose install --global'
                 sh 'gx-go rewrite'
-                sh test
+                try {
+                  sh test + ' 2>&1 | go-junit-report > junit-report-linux.xml'
+                } catch (err) {
+                  throw err
+                } finally {
+                  junit 'junit-report-*.xml'
+                }
               }
             }
           }
@@ -74,10 +88,17 @@ def call(opts) {
               withEnv(goEnv + env) {
                 sh 'go get -v github.com/whyrusleeping/gx'
                 sh 'go get -v github.com/whyrusleeping/gx-go'
+                sh 'go get -v github.com/jstemmer/go-junit-report'
                 checkout scm
                 sh 'gx --verbose install --global'
                 sh 'gx-go rewrite'
-                sh test
+                try {
+                  sh test + ' 2>&1 | go-junit-report > junit-report-macos.xml'
+                } catch (err) {
+                  throw err
+                } finally {
+                  junit 'junit-report-*.xml'
+                }
               }
             }
           }
