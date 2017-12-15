@@ -1,4 +1,23 @@
-def call(testCommand = "go test ./...") {
+import groovy.transform.Field
+
+def defVal (value, defaultValue) {
+  if (value == null || value == []) {
+    return defaultValue
+  } else {
+    if (value instanceof java.util.LinkedHashMap) {
+      return value + defaultValue
+    } else {
+      return value
+    }
+  }
+}
+
+@Field def defaultEnv = [CI: true]
+@Field def defaultTest = "go test ./..."
+
+def call(opts) {
+  def env = defVal(opts.env, defaultEnv)
+  def test = defVal(opts.test, defaultTest)
   stage('tests') {
     parallel(
       windows: {
@@ -9,13 +28,14 @@ def call(testCommand = "go test ./...") {
             def jobName = jobNameArr.split("/")[0..1].join("\\\\").toLowerCase()
             def originalWs = "${WORKSPACE}"
             ws("${originalWs}\\src\\github.com\\${jobName}") {
-              withEnv(["GOROOT=${root}", "GOPATH=${originalWs}", "PATH=$PATH;${root}\\bin;${originalWs}\\bin"]) {
+              def goEnv = ["GOROOT=${root}", "GOPATH=${originalWs}", "PATH=$PATH;${root}\\bin;${originalWs}\\bin"]
+              withEnv(goEnv + env) {
                 bat 'go get -v github.com/whyrusleeping/gx'
                 bat 'go get -v github.com/whyrusleeping/gx-go'
                 checkout scm
                 bat 'gx --verbose install --global'
                 bat 'gx-go rewrite'
-                bat testCommand
+                bat test
               }
             }
           }
@@ -29,13 +49,14 @@ def call(testCommand = "go test ./...") {
             def jobName = jobNameArr.split("/")[0..1].join("/").toLowerCase()
             def originalWs = "${WORKSPACE}"
             ws("${originalWs}/src/github.com/${jobName}") {
-              withEnv(["GOROOT=${root}", "GOPATH=${originalWs}", "PATH=$PATH:${root}/bin:${originalWs}/bin"]) {
+              def goEnv = ["GOROOT=${root}", "GOPATH=${originalWs}", "PATH=$PATH:${root}/bin:${originalWs}/bin"]
+              withEnv(goEnv + env) {
                 sh 'go get -v github.com/whyrusleeping/gx'
                 sh 'go get -v github.com/whyrusleeping/gx-go'
                 checkout scm
                 sh 'gx --verbose install --global'
                 sh 'gx-go rewrite'
-                sh testCommand
+                sh test
               }
             }
           }
@@ -49,13 +70,14 @@ def call(testCommand = "go test ./...") {
             def jobName = jobNameArr.split("/")[0..1].join("/").toLowerCase()
             def originalWs = "${WORKSPACE}"
             ws("${originalWs}/src/github.com/${jobName}") {
-              withEnv(["GOROOT=${root}", "GOPATH=${originalWs}", "PATH=$PATH:${root}/bin:${originalWs}/bin"]) {
+              def goEnv = ["GOROOT=${root}", "GOPATH=${originalWs}", "PATH=$PATH:${root}/bin:${originalWs}/bin"]
+              withEnv(goEnv + env) {
                 sh 'go get -v github.com/whyrusleeping/gx'
                 sh 'go get -v github.com/whyrusleeping/gx-go'
                 checkout scm
                 sh 'gx --verbose install --global'
                 sh 'gx-go rewrite'
-                sh testCommand
+                sh test
               }
             }
           }
@@ -64,4 +86,5 @@ def call(testCommand = "go test ./...") {
     )
   }
 }
+
 
