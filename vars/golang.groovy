@@ -15,7 +15,7 @@ def defVal (value, defaultValue) {
 @Field def defaultEnv = ["CI=true"]
 @Field def defaultTest = "go test -v ./..."
 
-def call(opts) {
+def call(opts = []) {
   def env = defVal(opts.env, defaultEnv)
   def test = defVal(opts.test, defaultTest)
   stage('tests') {
