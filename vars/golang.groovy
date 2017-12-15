@@ -12,7 +12,7 @@ def defVal (value, defaultValue) {
   }
 }
 
-@Field def defaultEnv = [CI: true]
+@Field def defaultEnv = ["CI=true"]
 @Field def defaultTest = "go test ./..."
 
 def call(opts) {
