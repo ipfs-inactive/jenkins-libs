@@ -17,38 +17,44 @@ import groovy.transform.Field
 
 // Step for running tests on a specific nodejs version with windows
 def windowsStep (version) {
-  node(label: 'windows') {
-    ansiColor('xterm') {
-      // need to make sure we're using the right line endings
-      bat 'git config --global core.autocrlf input'
-      checkout scm
-      fileExists 'package.json'
-      nodejs('9.2.0') {
-        // delete node_modules if it's there
-        bat 'del /s /q node_modules >nul 2>&1'
-        // install local version of yarn (prevent concurrency issues again)
-        bat 'npm install yarn@' + yarnVersion
-        // force visual studio version
-        bat yarnPath + ' config set msvs_version 2015 --global'
-        // install dependencies with a mutex lock
-        bat yarnPath + ' --mutex network'
-        // run actual tests
+  node(label: 'windows') { ansiColor('xterm') { withEnv(['CI=true']) {
+    // need to make sure we're using the right line endings
+    bat 'git config --global core.autocrlf input'
+    checkout scm
+    fileExists 'package.json'
+    nodejs('9.2.0') {
+      // delete node_modules if it's there
+      bat 'del /s /q node_modules >nul 2>&1'
+      // install local version of yarn (prevent concurrency issues again)
+      bat 'npm install yarn@' + yarnVersion
+      // force visual studio version
+      bat yarnPath + ' config set msvs_version 2015 --global'
+      // install dependencies with a mutex lock
+      bat yarnPath + ' --mutex network'
+      // bat yarnPath + ' add https://github.com/ipfs/aegir.git#add-junit-reports'
+      // run actual tests
+      try {
         bat yarnPath + ' test'
+      } catch (err) {
+        throw err
+      } finally {
+        junit 'junit-report-*.xml' 
       }
     }
-  }
+  }}}
 }
 
 // Step for running tests on a specific nodejs version with unix compatible OS
 def unixStep(version, nodeLabel) {
-  node(label: nodeLabel) {
-    ansiColor('xterm') {
-      checkout scm
-      fileExists 'package.json'
-      nodejs(version) {
-        sh 'rm -rf node_modules/'
-        sh 'npm install yarn@' + yarnVersion
-        sh yarnPath + ' --mutex network'
+  node(label: nodeLabel) { ansiColor('xterm') { withEnv(['CI=true']) {
+    checkout scm
+    fileExists 'package.json'
+    nodejs(version) {
+      sh 'rm -rf node_modules/'
+      sh 'npm install yarn@' + yarnVersion
+      sh yarnPath + ' --mutex network'
+      // sh yarnPath + ' add https://github.com/ipfs/aegir.git#add-junit-reports'
+      try {
         if (nodeLabel == 'linux') { // if it's linux, we need xvfb for display emulation (chrome)
           wrap([$class: 'Xvfb', parallelBuild: true, autoDisplayName: true]) {
             sh yarnPath + ' test'
@@ -56,9 +62,13 @@ def unixStep(version, nodeLabel) {
         } else {
           sh yarnPath + ' test'
         }
+      } catch (err) {
+        throw err
+      } finally {
+        junit 'junit-report-*.xml' 
       }
     }
-  }
+  }}}
 }
 
 // Helper function for getting the right platform + version
