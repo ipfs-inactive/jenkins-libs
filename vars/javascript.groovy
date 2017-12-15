@@ -38,7 +38,7 @@ def windowsStep (version) {
       } catch (err) {
         throw err
       } finally {
-        junit 'junit-report-*.xml' 
+        // junit 'junit-report-*.xml' 
       }
     }
   }}}
@@ -65,7 +65,7 @@ def unixStep(version, nodeLabel) {
       } catch (err) {
         throw err
       } finally {
-        junit 'junit-report-*.xml' 
+        // junit 'junit-report-*.xml' 
       }
     }
   }}}
