@@ -31,14 +31,14 @@ def windowsStep (version) {
       bat yarnPath + ' config set msvs_version 2015 --global'
       // install dependencies with a mutex lock
       bat yarnPath + ' --mutex network'
-      // bat yarnPath + ' add https://github.com/ipfs/aegir.git#add-junit-reports'
       // run actual tests
       try {
         bat yarnPath + ' test'
       } catch (err) {
         throw err
       } finally {
-        // junit 'junit-report-*.xml' 
+        junit 'junit-report-*.xml'
+        cleanWs()
       }
     }
   }}}
@@ -53,7 +53,6 @@ def unixStep(version, nodeLabel) {
       sh 'rm -rf node_modules/'
       sh 'npm install yarn@' + yarnVersion
       sh yarnPath + ' --mutex network'
-      // sh yarnPath + ' add https://github.com/ipfs/aegir.git#add-junit-reports'
       try {
         if (nodeLabel == 'linux') { // if it's linux, we need xvfb for display emulation (chrome)
           wrap([$class: 'Xvfb', parallelBuild: true, autoDisplayName: true]) {
@@ -65,7 +64,8 @@ def unixStep(version, nodeLabel) {
       } catch (err) {
         throw err
       } finally {
-        // junit 'junit-report-*.xml' 
+        junit 'junit-report-*.xml'
+        cleanWs()
       }
     }
   }}}

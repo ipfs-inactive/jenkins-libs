@@ -33,6 +33,7 @@ def windowsStep () {
           bat yarnPath + ' make'
         }
         archiveArtifacts 'out\\make\\**\\*'
+        cleanWs()
       }
     }
   }
@@ -50,6 +51,7 @@ def unixStep(nodeLabel) {
         sh yarnPath + ' --mutex network'
         sh yarnPath + ' make'
         archiveArtifacts 'out/make/*'
+        cleanWs()
       }
     }
   }
