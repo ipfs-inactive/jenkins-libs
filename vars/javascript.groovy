@@ -37,7 +37,7 @@ def windowsStep (version) {
       } catch (err) {
         throw err
       } finally {
-        junit 'junit-report-*.xml'
+        junit allowEmptyResults: true, testResults: 'junit-report-*.xml'
         cleanWs()
       }
     }
@@ -64,7 +64,7 @@ def unixStep(version, nodeLabel) {
       } catch (err) {
         throw err
       } finally {
-        junit 'junit-report-*.xml'
+        junit allowEmptyResults: true, testResults: 'junit-report-*.xml'
         cleanWs()
       }
     }

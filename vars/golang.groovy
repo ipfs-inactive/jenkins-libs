@@ -41,7 +41,7 @@ def call(opts = []) {
                 } catch (err) {
                   throw err
                 } finally {
-                  junit 'junit-report-*.xml'
+                  junit allowEmptyResults: true, testResults: 'junit-report-*.xml'
                 }
               }
             }
@@ -69,7 +69,7 @@ def call(opts = []) {
                 } catch (err) {
                   throw err
                 } finally {
-                  junit 'junit-report-*.xml'
+                  junit allowEmptyResults: true, testResults: 'junit-report-*.xml'
                 }
               }
             }
