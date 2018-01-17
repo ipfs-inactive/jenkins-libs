@@ -37,7 +37,8 @@ def call(opts = []) {
                 bat 'gx --verbose install --global'
                 bat 'gx-go rewrite'
                 try {
-                  bat test + ' 2>&1 | go-junit-report > junit-report-windows.xml'
+                  bat test + ' > output | tail -f output'
+                  bat 'go-junit-report > junit-report-windows.xml'
                 } catch (err) {
                   throw err
                 } finally {
@@ -65,7 +66,8 @@ def call(opts = []) {
                 sh 'gx --verbose install --global'
                 sh 'gx-go rewrite'
                 try {
-                  sh test + ' 2>&1 | go-junit-report > junit-report-linux.xml'
+                  sh test + ' > output | tail -f output'
+                  sh 'cat output | go-junit-report > junit-report-linux.xml'
                 } catch (err) {
                   throw err
                 } finally {
@@ -93,7 +95,8 @@ def call(opts = []) {
                 sh 'gx --verbose install --global'
                 sh 'gx-go rewrite'
                 try {
-                  sh test + ' 2>&1 | go-junit-report > junit-report-macos.xml'
+                  sh test + ' > output | tail -f output'
+                  sh 'cat output | go-junit-report > junit-report-macos.xml'
                 } catch (err) {
                   throw err
                 } finally {
