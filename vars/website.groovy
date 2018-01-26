@@ -34,20 +34,23 @@ def call(opts = []) {
 
   stage('connect to worker') {
       node(label: 'master') {
-          token = readFile '/tmp/dnsimpletoken'
-          token = token.trim()
-          withEnv(["IPFS_PATH=/efs/.ipfs", "DNSIMPLE_TOKEN=$token"]) {
+          withEnv(["IPFS_PATH=/efs/.ipfs"]) {
               sh "ipfs swarm connect $nodeMultiaddr"
               sh "ipfs pin add --progress $websiteHash"
-              def websiteUrl = "https://ipfs.io/ipfs/$websiteHash"
-              echo "New website: $websiteUrl"
-              sh "set +x && curl -X POST -H 'Content-Type: application/json' --data '{\"state\": \"success\", \"target_url\": \"$websiteUrl\", \"description\": \"A rendered preview of this commit\", \"context\": \"Rendered Preview\"}' -H 'Authorization: Bearer \$(cat /tmp/userauthtoken)' https://api.github.com/repos/$githubOrg/$githubRepo/statuses/$gitCommit"
-              if ("$BRANCH_NAME" == "master") {
-                sh 'wget https://ipfs.io/ipfs/QmRhdziJEm7ZaLBB3H7XGcKF8FJW6QpAqGmyB2is4QVN4L/dnslink-dnsimple -O dnslink-dnsimple'
-                sh 'chmod +x dnslink-dnsimple'
+          }
+          def websiteUrl = "https://ipfs.io/ipfs/$websiteHash"
+          echo "New website: $websiteUrl"
+          sh "set +x && curl -X POST -H 'Content-Type: application/json' --data '{\"state\": \"success\", \"target_url\": \"$websiteUrl\", \"description\": \"A rendered preview of this commit\", \"context\": \"Rendered Preview\"}' -H \"Authorization: Bearer \$(cat /tmp/userauthtoken)\" https://api.github.com/repos/$githubOrg/$githubRepo/statuses/$gitCommit"
+          if ("$BRANCH_NAME" == "master") {
+            sh 'wget https://ipfs.io/ipfs/QmRhdziJEm7ZaLBB3H7XGcKF8FJW6QpAqGmyB2is4QVN4L/dnslink-dnsimple -O dnslink-dnsimple'
+            sh 'chmod +x dnslink-dnsimple'
+            token = readFile '/tmp/dnsimpletoken'
+            token = token.trim()
+            withEnv(["DNSIMPLE_TOKEN=$token"]) {
                 sh "./dnslink-dnsimple $website /ipfs/$websiteHash $record"
-              }
+            }
           }
       }
   }
 }
+
