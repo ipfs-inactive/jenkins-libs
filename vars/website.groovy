@@ -4,6 +4,10 @@ def call(opts = []) {
   def nodeMultiaddr
   def websiteHash
 
+  def githubOrg
+  def githubRepo
+  def gitCommit
+
   assert opts['website'] : "You need to pass in Website as a argument"
   assert opts['record'] : "You need to pass in Record as a argument"
 
@@ -16,7 +20,12 @@ def call(opts = []) {
           echo "$nodeIP"
           nodeMultiaddr = sh returnStdout: true, script: "ipfs id --format='<addrs>\n' | grep $nodeIP"
           echo "$nodeMultiaddr"
-          checkout scm
+          def details = checkout scm
+          def origin = details.GIT_URL
+          def splitted = origin.split("[./]")
+          githubOrg = splitted[-3]
+          githubRepo = splitted[-2]
+          gitCommit = details.GIT_COMMIT
           sh 'docker run -i -v `pwd`:/site ipfs/ci-websites make -C /site build'
           websiteHash = sh returnStdout: true, script: 'ipfs add -rQ public'
           websiteHash = websiteHash.trim()
@@ -30,7 +39,9 @@ def call(opts = []) {
           withEnv(["IPFS_PATH=/efs/.ipfs", "DNSIMPLE_TOKEN=$token"]) {
               sh "ipfs swarm connect $nodeMultiaddr"
               sh "ipfs pin add --progress $websiteHash"
-              echo "New website: https://ipfs.io/ipfs/$websiteHash"
+              def websiteUrl = "https://ipfs.io/ipfs/$websiteHash"
+              echo "New website: $websiteUrl"
+              sh "curl -X POST -H 'Content-Type: application/json' --data '{\"state\": \"success\", \"target_url\": \"$websiteUrl\", \"description\": \"A rendered preview of this commit\", \"context\": \"Rendered Preview\"}' -H 'Authorization: Bearer $(cat /tmp/userauthtoken)' https://api.github.com/repos/$githubOrg/$githubRepo/statuses/$gitCommit"
               if ("$BRANCH_NAME" == "master") {
                 sh 'wget https://ipfs.io/ipfs/QmRhdziJEm7ZaLBB3H7XGcKF8FJW6QpAqGmyB2is4QVN4L/dnslink-dnsimple -O dnslink-dnsimple'
                 sh 'chmod +x dnslink-dnsimple'
