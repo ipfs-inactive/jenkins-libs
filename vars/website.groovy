@@ -5,7 +5,7 @@ def call(opts = []) {
   def websiteHash
 
   assert opts['website'] : "You need to pass in Website as a argument"
-  assert opts['record'] : "You need to pass in Website as a argument"
+  assert opts['record'] : "You need to pass in Record as a argument"
 
   def website = opts['website']
   def record = opts['record']
@@ -18,7 +18,8 @@ def call(opts = []) {
           echo "$nodeMultiaddr"
           checkout scm
           sh 'docker run -i -v `pwd`:/site ipfs/ci-websites make -C /site build'
-          websiteHash = sh returnStdout: true, script: 'ipfs add -rq public | tail -n1'
+          websiteHash = sh returnStdout: true, script: 'ipfs add -rQ public'
+          websiteHash = websiteHash.trim()
       }
   }
 
