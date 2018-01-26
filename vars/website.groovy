@@ -30,7 +30,7 @@ def call(opts = []) {
               sh "ipfs pin add --progress $websiteHash"
               echo "New website: https://ipfs.io/ipfs/$websiteHash"
               if ("$BRANCH_NAME" == "master") {
-                sh 'wget https://ipfs.io/ipfs/QmfEf1ADpyXpiKzXqDeQKJXdaNh2QfTdEgSfix3nkk2Bf4/dnslink-dnsimple -O dnslink-dnsimple'
+                sh 'wget https://ipfs.io/ipfs/QmanZ2frNYuvAvYiBLKdUjHsj69A6j6rR5P1emf9FGvgpk/dnslink-dnsimple -O dnslink-dnsimple'
                 sh 'chmod +x dnslink-dnsimple'
                 sh "./dnslink-dnsimple $website /ipfs/$websiteHash $record"
               }
