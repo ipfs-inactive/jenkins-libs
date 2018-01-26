@@ -29,9 +29,12 @@ def call(opts = []) {
               sh "ipfs swarm connect $nodeMultiaddr"
               sh "ipfs pin add --progress $websiteHash"
               echo "New website: https://ipfs.io/ipfs/$websiteHash"
-              sh 'wget https://ipfs.io/ipfs/QmfEf1ADpyXpiKzXqDeQKJXdaNh2QfTdEgSfix3nkk2Bf4/dnslink-dnsimple -O dnslink-dnsimple'
-              sh 'chmod +x dnslink-dnsimple'
-              sh "./dnslink-dnsimple $website /ipfs/$websiteHash $record"
+              def branch = sh returnStdout: true, script: 'git rev-parse --abbrev-ref HEAD'
+              if branch == "master" {
+                sh 'wget https://ipfs.io/ipfs/QmfEf1ADpyXpiKzXqDeQKJXdaNh2QfTdEgSfix3nkk2Bf4/dnslink-dnsimple -O dnslink-dnsimple'
+                sh 'chmod +x dnslink-dnsimple'
+                sh "./dnslink-dnsimple $website /ipfs/$websiteHash $record"
+              }
           }
       }
   }
