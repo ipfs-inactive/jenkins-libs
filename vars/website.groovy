@@ -41,7 +41,7 @@ def call(opts = []) {
               sh "ipfs pin add --progress $websiteHash"
               def websiteUrl = "https://ipfs.io/ipfs/$websiteHash"
               echo "New website: $websiteUrl"
-              sh "curl -X POST -H 'Content-Type: application/json' --data '{\"state\": \"success\", \"target_url\": \"$websiteUrl\", \"description\": \"A rendered preview of this commit\", \"context\": \"Rendered Preview\"}' -H 'Authorization: Bearer $(cat /tmp/userauthtoken)' https://api.github.com/repos/$githubOrg/$githubRepo/statuses/$gitCommit"
+              // sh "curl -X POST -H 'Content-Type: application/json' --data '{\"state\": \"success\", \"target_url\": \"$websiteUrl\", \"description\": \"A rendered preview of this commit\", \"context\": \"Rendered Preview\"}' -H 'Authorization: Bearer $(cat /tmp/userauthtoken)' https://api.github.com/repos/$githubOrg/$githubRepo/statuses/$gitCommit"
               if ("$BRANCH_NAME" == "master") {
                 sh 'wget https://ipfs.io/ipfs/QmRhdziJEm7ZaLBB3H7XGcKF8FJW6QpAqGmyB2is4QVN4L/dnslink-dnsimple -O dnslink-dnsimple'
                 sh 'chmod +x dnslink-dnsimple'
