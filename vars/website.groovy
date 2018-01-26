@@ -25,8 +25,7 @@ def call(opts = []) {
   stage('connect to worker') {
       node(label: 'master') {
           token = readFile '/tmp/dnsimpletoken'
-          // TODO fix newline issue after
-          // token = token.trim()
+          token = token.trim()
           withEnv(["IPFS_PATH=/efs/.ipfs", "DNSIMPLE_TOKEN=$token"]) {
               sh "ipfs swarm connect $nodeMultiaddr"
               sh "ipfs pin add --progress $websiteHash"
