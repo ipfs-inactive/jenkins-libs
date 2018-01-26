@@ -3,7 +3,6 @@ def call(opts = []) {
   def nodeIP
   def nodeMultiaddr
   def websiteHash
-  def branch
 
   assert opts['website'] : "You need to pass in Website as a argument"
   assert opts['record'] : "You need to pass in Website as a argument"
@@ -18,7 +17,6 @@ def call(opts = []) {
           nodeMultiaddr = sh returnStdout: true, script: "ipfs id --format='<addrs>\n' | grep $nodeIP"
           echo "$nodeMultiaddr"
           checkout scm
-          branch = sh returnStdout: true, script: 'git rev-parse --abbrev-ref HEAD'
           sh 'docker run -i -v `pwd`:/site ipfs/ci-websites make -C /site build'
           websiteHash = sh returnStdout: true, script: 'ipfs add -rq public | tail -n1'
       }
@@ -31,7 +29,7 @@ def call(opts = []) {
               sh "ipfs swarm connect $nodeMultiaddr"
               sh "ipfs pin add --progress $websiteHash"
               echo "New website: https://ipfs.io/ipfs/$websiteHash"
-              if (branch == "master") {
+              if ("$BRANCH_NAME" == "master") {
                 sh 'wget https://ipfs.io/ipfs/QmfEf1ADpyXpiKzXqDeQKJXdaNh2QfTdEgSfix3nkk2Bf4/dnslink-dnsimple -O dnslink-dnsimple'
                 sh 'chmod +x dnslink-dnsimple'
                 sh "./dnslink-dnsimple $website /ipfs/$websiteHash $record"
