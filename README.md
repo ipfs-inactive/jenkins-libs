@@ -6,10 +6,10 @@ This repository is being used for setting up default/standard pipelines for proj
 
 A script that sits in `ci/Jenkinsfile` can access these library functions by calling the name of the file and passing arguments.
 
-- [#electron-forge](Electron Forge)
-- [#golang](Golang)
-- [#javascript](JavaScript)
-- [#website-preview-and-deployment-hugo-only](Website)
+- [Electron Forge](#electron-forge)
+- [Golang](#golang)
+- [JavaScript](#javascript)
+- [Website](#website-preview-and-deployment-hugo-only)
 
 ## Electron Forge
 
