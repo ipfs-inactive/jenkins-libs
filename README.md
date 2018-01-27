@@ -53,7 +53,8 @@ Builds commits and publishes previews over IPFS for websites using hugo. If comm
 ```groovy
 website([
   website: 'libp2p.io', // required argument for which zone this website will deployed at
-  record: '_dnslink' // required argument for which record to add the dnslink TXT record at
+  record: '_dnslink', // required argument for which record to add the dnslink TXT record at
+  build_directory: 'public/' // optional argument for which directory to use as build directory. Defaults to `public/`
 ])
 ```
 

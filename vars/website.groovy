@@ -8,11 +8,15 @@ def call(opts = []) {
   def githubRepo
   def gitCommit
 
-  assert opts['website'] : "You need to pass in Website as a argument"
-  assert opts['record'] : "You need to pass in Record as a argument"
+  assert opts['website'] : "You need to pass in zone as the `website` argument "
+  assert opts['record'] : "You need to pass in name of the record as the `record` argument "
 
   def website = opts['website']
   def record = opts['record']
+  def buildDirectory = 'public/'
+  if (opts['build_directory']) {
+    buildDirectory = opts['build_directory']
+  }
 
   stage('build website') {
       node(label: 'linux') {
@@ -27,7 +31,7 @@ def call(opts = []) {
           githubRepo = splitted[-2]
           gitCommit = details.GIT_COMMIT
           sh 'docker run -i -v `pwd`:/site ipfs/ci-websites make -C /site build'
-          websiteHash = sh returnStdout: true, script: 'ipfs add -rQ public'
+          websiteHash = sh returnStdout: true, script: "ipfs add -rQ $buildDirectory"
           websiteHash = websiteHash.trim()
       }
   }
