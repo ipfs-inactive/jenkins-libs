@@ -27,7 +27,12 @@ def call(opts = []) {
           def splitted = origin.split("[./]")
           githubOrg = splitted[-3]
           githubRepo = splitted[-2]
-          gitCommit = details.GIT_COMMIT
+          def isPR = "$BRANCH_NAME".startsWith('PR-')
+          if (isPR) {
+              gitCommit = sh returnStdout: true, script: "git rev-parse remotes/origin/$BRANCH_NAME"
+          } else {
+              gitCommit = details.GIT_COMMIT
+          }
           sh 'docker run -i -v `pwd`:/site ipfs/ci-websites make -C /site build'
           websiteHash = sh returnStdout: true, script: "ipfs add -rQ $buildDirectory"
           websiteHash = websiteHash.trim()
@@ -55,4 +60,5 @@ def call(opts = []) {
       }
   }
 }
+
 
