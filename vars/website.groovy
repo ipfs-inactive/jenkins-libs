@@ -60,7 +60,7 @@ def call(opts = []) {
       }
   }
 
-  stage('connect to worker') {
+  stage('pin & set commit status & deploy if branch is master') {
       node(label: 'master') {
           withEnv(["IPFS_PATH=/efs/.ipfs"]) {
               sh "ipfs swarm connect $nodeMultiaddr"
