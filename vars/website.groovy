@@ -1,4 +1,19 @@
-import static lib.Resolve.Resolve
+// Resolve takes a website and record, and makes it into a URL that can be
+// resolved with `ipfs resolve $DOMAIN`, removing _dnslink if needed
+def Resolve(opts = []) {
+  assert opts['website'] : 'You need to provide the `website` argument'
+
+  def zone = opts['website']
+  def record = opts['record']
+
+  if (record) {
+    def full = [record, zone].join('.')
+    def reg = ~/^_dnslink./
+    return full - reg
+  } else {
+    return zone
+  }
+}
 
 def call(opts = []) {
   def hashToPin
@@ -38,7 +53,7 @@ def call(opts = []) {
           }
           sh 'docker run -i -v `pwd`:/site ipfs/ci-websites make -C /site build'
           resolvableDomain = Resolve(opts)
-          println resolveDomain
+          println resolvableDomain
           // Find previous hash if it already exists
           websiteHash = sh returnStdout: true, script: "ipfs add -rQ $buildDirectory"
           websiteHash = websiteHash.trim()

@@ -1,5 +1,6 @@
 package lib
 
+// TODO not yet being used
 // Resolve takes a website and record, and makes it into a URL that can be
 // resolved with `ipfs resolve $DOMAIN`, removing _dnslink if needed
 static String Resolve(opts = []) {
