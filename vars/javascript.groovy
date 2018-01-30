@@ -85,9 +85,6 @@ def getStep(os, version) {
 
 
 def call() {
- stage('Pre-Tests') {
-  echo 'before tests'
- }
  stage('Tests') {
   // Create map for all the os+version combinations
   def steps = [:]
@@ -97,10 +94,10 @@ def call() {
           steps[(stepName)] = getStep(os, nodejsVersion)
       }
   }
-  // execute those steps in parallel
-  parallel steps
- }
- stage('Post-Tests') {
-  echo 'All completed, yay!'
+  // Maximum runtime: 1 hour
+  timeout(time: 1, unit: 'HOURS') {
+    // execute those steps in parallel
+    parallel steps
+  }
  }
 }
