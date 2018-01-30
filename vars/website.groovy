@@ -1,8 +1,11 @@
+import static lib.Resolve.Resolve
+
 def call(opts = []) {
   def hashToPin
   def nodeIP
   def nodeMultiaddr
   def websiteHash
+  def previousWebsiteHash
 
   def githubOrg
   def githubRepo
@@ -34,6 +37,9 @@ def call(opts = []) {
               gitCommit = details.GIT_COMMIT
           }
           sh 'docker run -i -v `pwd`:/site ipfs/ci-websites make -C /site build'
+          resolvableDomain = Resolve(opts)
+          println resolveDomain
+          // Find previous hash if it already exists
           websiteHash = sh returnStdout: true, script: "ipfs add -rQ $buildDirectory"
           websiteHash = websiteHash.trim()
       }
