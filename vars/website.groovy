@@ -31,36 +31,67 @@ def call(opts = []) {
 
   def website = opts['website']
   def record = opts['record']
-  def buildDirectory = 'public/'
+  def buildDirectory = './public'
+
   if (opts['build_directory']) {
     buildDirectory = opts['build_directory']
   }
 
   stage('build website') {
       node(label: 'linux') {
+          // Figure out our IP + Multiaddr for master to ensure connection
           nodeIP = sh returnStdout: true, script: 'dig +short myip.opendns.com @resolver1.opendns.com'
           nodeMultiaddr = sh returnStdout: true, script: "ipfs id --format='<addrs>\n' | grep $nodeIP"
           def details = checkout scm
+
+          // Parse Github Org + Repo
           def origin = details.GIT_URL
           def splitted = origin.split("[./]")
           githubOrg = splitted[-3]
           githubRepo = splitted[-2]
+
+          // Get commit from branch OR latest commit in PR
           def isPR = "$BRANCH_NAME".startsWith('PR-')
           if (isPR) {
               gitCommit = sh returnStdout: true, script: "git rev-parse remotes/origin/$BRANCH_NAME"
           } else {
               gitCommit = details.GIT_COMMIT
           }
-          sh 'docker run -i -v `pwd`:/site ipfs/ci-websites make -C /site build'
+
+          // Get the resolvable domain for "ipfs name resolve"
           resolvableDomain = Resolve(opts)
-          println resolvableDomain
-          // Find previous hash if it already exists
-          websiteHash = sh returnStdout: true, script: "ipfs add -rQ $buildDirectory"
-          websiteHash = websiteHash.trim()
+
+          // Get the current hash of the website
+          currentHash = sh(returnStdout: true, script: "ipfs name resolve /ipns/$resolvableDomain").trim()
+
+          // Get the list of previous versions if it exists
+          sh "ipfs get $currentHash/_previous-versions > _previous-versions || true"
+
+          // Build Website
+          sh 'docker run -i -v `pwd`:/site ipfs/ci-websites make -C /site build'
+
+          // Add the website to IPFS
+          currentWebsite = sh(returnStdout: true, script: "ipfs add -rQ $buildDirectory").trim()
+
+          // Add the link to the _previous-versions with $currentHash
+          versionsHash = sh(returnStdout: true, script: "ipfs add -Q ./_previous-versions").trim()
+          websiteHash = sh(returnStdout: true, script: "ipfs object patch $currentWebsite add-link _previous-versions $versionsHash").trim()
+
+          // If previousHash (currently deployed) is same as websiteHash, we can skip
+          if (currentHash == currentWebsite) {
+              currentBuild.status = "SUCCESS"
+              println "This build is already the latest and deployed version"
+              return
+          }
+
+          // Now we just have to add the previous link before
+          sh "echo $currentHash >> ./_previous-versions"
+          versionsHash = sh(returnStdout: true, script: "ipfs add -Q ./_previous-versions").trim()
+          websiteHash = sh(returnStdout: true, script: "ipfs object patch $currentWebsite add-link _previous-versions $versionsHash").trim()
       }
   }
 
-  stage('pin & set commit status & deploy if branch is master') {
+  stage('pin + publish preview + publish dns record update') {
       node(label: 'master') {
           withEnv(["IPFS_PATH=/efs/.ipfs"]) {
               sh "ipfs swarm connect $nodeMultiaddr"
@@ -81,5 +112,3 @@ def call(opts = []) {
       }
   }
 }
-
-
