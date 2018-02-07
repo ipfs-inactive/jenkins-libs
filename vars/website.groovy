@@ -32,7 +32,6 @@ def call(opts = []) {
   def website = opts['website']
   def record = opts['record']
   def buildDirectory = './public'
-
   if (opts['build_directory']) {
     buildDirectory = opts['build_directory']
   }
@@ -78,8 +77,8 @@ def call(opts = []) {
           websiteHash = sh(returnStdout: true, script: "ipfs object patch $currentWebsite add-link _previous-versions $versionsHash").trim()
 
           // If previousHash (currently deployed) is same as websiteHash, we can skip
-          if (currentHash == currentWebsite) {
-              currentBuild.status = "SUCCESS"
+          if (currentHash == '/ipfs/' + websiteHash) {
+              currentBuild.result = hudson.model.Result.SUCCESS.toString()
               println "This build is already the latest and deployed version"
               return
           }
@@ -87,28 +86,33 @@ def call(opts = []) {
           // Now we just have to add the previous link before
           sh "echo $currentHash >> ./_previous-versions"
           versionsHash = sh(returnStdout: true, script: "ipfs add -Q ./_previous-versions").trim()
-          websiteHash = sh(returnStdout: true, script: "ipfs object patch $currentWebsite add-link _previous-versions $versionsHash").trim()
+          websiteHash = sh(returnStdout: true, script: "ipfs object patch $websiteHash add-link _previous-versions $versionsHash").trim()
+          cleanWs notFailBuild: true
       }
   }
-
   stage('pin + publish preview + publish dns record update') {
-      node(label: 'master') {
-          withEnv(["IPFS_PATH=/efs/.ipfs"]) {
-              sh "ipfs swarm connect $nodeMultiaddr"
-              sh "ipfs pin add --progress $websiteHash"
+    if (currentBuild.result == hudson.model.Result.SUCCESS.toString()) {
+      println "This build is already the latest and deployed version"
+      return
+    }
+    node(label: 'master') {
+        withEnv(["IPFS_PATH=/efs/.ipfs"]) {
+            sh "ipfs swarm connect $nodeMultiaddr"
+            sh "ipfs pin add --progress $websiteHash"
+        }
+        def websiteUrl = "https://ipfs.io/ipfs/$websiteHash"
+        sh "set +x && curl -X POST -H 'Content-Type: application/json' --data '{\"state\": \"success\", \"target_url\": \"$websiteUrl\", \"description\": \"A rendered preview of this commit\", \"context\": \"Rendered Preview\"}' -H \"Authorization: Bearer \$(cat /tmp/userauthtoken)\" https://api.github.com/repos/$githubOrg/$githubRepo/statuses/$gitCommit"
+        echo "New website: $websiteUrl"
+        if ("$BRANCH_NAME" == "master") {
+          sh 'wget https://ipfs.io/ipfs/QmRhdziJEm7ZaLBB3H7XGcKF8FJW6QpAqGmyB2is4QVN4L/dnslink-dnsimple -O dnslink-dnsimple'
+          sh 'chmod +x dnslink-dnsimple'
+          token = readFile '/tmp/dnsimpletoken'
+          token = token.trim()
+          withEnv(["DNSIMPLE_TOKEN=$token"]) {
+              sh "./dnslink-dnsimple $website /ipfs/$websiteHash $record"
           }
-          def websiteUrl = "https://ipfs.io/ipfs/$websiteHash"
-          sh "set +x && curl -X POST -H 'Content-Type: application/json' --data '{\"state\": \"success\", \"target_url\": \"$websiteUrl\", \"description\": \"A rendered preview of this commit\", \"context\": \"Rendered Preview\"}' -H \"Authorization: Bearer \$(cat /tmp/userauthtoken)\" https://api.github.com/repos/$githubOrg/$githubRepo/statuses/$gitCommit"
-          echo "New website: $websiteUrl"
-          if ("$BRANCH_NAME" == "master") {
-            sh 'wget https://ipfs.io/ipfs/QmRhdziJEm7ZaLBB3H7XGcKF8FJW6QpAqGmyB2is4QVN4L/dnslink-dnsimple -O dnslink-dnsimple'
-            sh 'chmod +x dnslink-dnsimple'
-            token = readFile '/tmp/dnsimpletoken'
-            token = token.trim()
-            withEnv(["DNSIMPLE_TOKEN=$token"]) {
-                sh "./dnslink-dnsimple $website /ipfs/$websiteHash $record"
-            }
-          }
-      }
+        }
+    }
   }
 }
+
