@@ -54,7 +54,8 @@ Builds commits and publishes previews over IPFS for websites using hugo. If comm
 website([
   website: 'libp2p.io', // required argument for which zone this website will deployed at
   record: '_dnslink', // required argument for which record to add the dnslink TXT record at
-  build_directory: 'public/' // optional argument for which directory to use as build directory. Defaults to `public/`
+  build_directory: 'public/', // optional argument for which directory to use as build directory. Defaults to `public/`
+  disable_publish: false // optional argument for disabling DNS publish. Useful when websites are using hugo but we're not ready to publish them anywhere yet
 ])
 ```
 
