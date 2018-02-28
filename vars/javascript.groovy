@@ -15,48 +15,21 @@ import groovy.transform.Field
 // Global for having the path to yarn (prevent concurrency issue with yarn cache)
 @Field final String yarnPath = './node_modules/.bin/yarn'
 
-// Step for running tests on a specific nodejs version with windows
-def windowsBuildStep (version) {
+def windowsTestStep(cmd, version) {
   node(label: 'windows') { ansiColor('xterm') { withEnv(['CI=true']) {
-    // need to make sure we're using the right line endings
     bat 'git config --global core.autocrlf input'
     checkout scm
     fileExists 'package.json'
     nodejs(version) {
-      // delete node_modules if it's there
-      bat 'del /s /q node_modules >nul 2>&1'
-      // install local version of yarn (prevent concurrency issues again)
-      bat 'npm install yarn@' + yarnVersion
-      // force visual studio version
-      bat yarnPath + ' config set msvs_version 2015 --global'
-      // install dependencies with a mutex lock
-      bat yarnPath + ' --mutex network'
-      // run actual tests
-      stash(name: 'windows'+version)
-    }
-  }}}
-}
-
-// Step for running tests on a specific nodejs version with unix compatible OS
-def unixBuildStep(version, nodeLabel) {
-  node(label: nodeLabel) { ansiColor('xterm') { withEnv(['CI=true']) {
-    checkout scm
-    fileExists 'package.json'
-    nodejs(version) {
-      sh 'rm -rf node_modules/'
-      sh 'npm install yarn@' + yarnVersion
-      sh yarnPath + ' --mutex network'
-      stash(name: nodeLabel+version)
-    }
-  }}}
-}
-
-def windowsTestStep(cmd, version) {
-  node(label: 'windows') { ansiColor('xterm') { withEnv(['CI=true']) {
-    unstash(name: 'windows'+version)
-    nodejs(version) {
       try {
-        bat cmd
+        bat 'del /s /q node_modules >nul 2>&1'
+        // install local version of yarn (prevent concurrency issues again)
+        bat 'npm install yarn@' + yarnVersion
+        // force visual studio version
+        bat yarnPath + ' config set msvs_version 2015 --global'
+        // install dependencies with a mutex lock
+        bat yarnPath + ' --mutex network'
+        bat yarnPath + ' ' + cmd
       } catch (err) {
         throw err
       } finally {
@@ -68,15 +41,19 @@ def windowsTestStep(cmd, version) {
 
 def unixTestStep(cmd, version, nodeLabel) {
   node(label: nodeLabel) { ansiColor('xterm') { withEnv(['CI=true']) {
-    unstash(name: nodeLabel+version)
+    checkout scm
+    fileExists 'package.json'
     nodejs(version) {
       try {
+        sh 'rm -rf node_modules/'
+        sh 'npm install yarn@' + yarnVersion
+        sh yarnPath + ' --mutex network'
         if (nodeLabel == 'linux') { // if it's linux, we need xvfb for display emulation (chrome)
           wrap([$class: 'Xvfb', parallelBuild: true, autoDisplayName: true]) {
-            sh cmd
+            sh yarnPath + ' ' + cmd
           }
         } else {
-          sh cmd
+          sh yarnPath + ' ' + cmd
         }
       } catch (err) {
         throw err
@@ -85,19 +62,6 @@ def unixTestStep(cmd, version, nodeLabel) {
       }
     }
   }}}
-}
-
-
-// Helper function for getting the right platform + version
-def getBuildStep(os, version) {
-  return {
-    if (os == 'macos' || os == 'linux') {
-      return unixBuildStep(version, os)
-    }
-    if (os == 'windows') {
-      return windowsBuildStep(version)
-    }
-  }
 }
 
 def getTestStep(cmd, os, version) {
@@ -114,32 +78,17 @@ def getTestStep(cmd, os, version) {
 
 def call() {
  def hasAegirScripts = true
- stage('Build') {
-  // Create map for all the os+version combinations
-  def buildSteps = [:]
-  for (os in osToTests) {
-      for (nodejsVersion in nodejsVersionsToTest) {
-          def stepName = os + ' - ' + nodejsVersion
-          buildSteps[(stepName)] = getBuildStep(os, nodejsVersion)
-      }
-  }
-  timeout(time: 1, unit: 'HOURS') {
-    parallel buildSteps
-  }
- }
  stage('Test') {
-  // check if test:* exists and add `npm run test:*`
-  // if no test:* was found, add `npm run test`
   def testSteps = [:]
   for (os in osToTests) {
       for (nodejsVersion in nodejsVersionsToTest) {
           def stepName = os + ' - ' + nodejsVersion
           if (hasAegirScripts) {
-            testSteps[(stepName + " test:node")]    = getTestStep("npm run test:node", os, nodejsVersion)
-            testSteps[(stepName + " test:browser")] = getTestStep("npm run test:browser", os, nodejsVersion)
-            // testSteps[(stepName)] = getTestStep("npm test:webworker", os, nodejsVersion)
+            testSteps[(stepName + " test:node")]      = getTestStep("test:node", os, nodejsVersion)
+            testSteps[(stepName + " test:browser")]   = getTestStep("test:browser", os, nodejsVersion)
+            testSteps[(stepName + " test:webworker")] = getTestStep("test:webworker", os, nodejsVersion)
           } else {
-            testSteps[(stepName)] = getTestStep("npm run test", os, nodejsVersion)
+            testSteps[(stepName)] = getTestStep("test", os, nodejsVersion)
           }
       }
   }
