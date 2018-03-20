@@ -94,6 +94,16 @@ def call() {
           steps[(stepName)] = getStep(os, nodejsVersion)
       }
   }
+  steps['linting'] = {node(label: 'linux') { ansiColor('xterm') { withEnv(['CI=true']) {
+    checkout scm
+    fileExists 'package.json'
+    nodejs('9.2.0') {
+        sh 'rm -rf node_modules/'
+        sh 'npm install yarn@' + yarnVersion
+        sh yarnPath + ' --mutex network'
+        sh yarnPath + ' lint'
+    }
+  }}}}
   // Maximum runtime: 1 hour
   timeout(time: 1, unit: 'HOURS') {
     // execute those steps in parallel
