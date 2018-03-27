@@ -67,7 +67,7 @@ def call(opts = []) {
           resolvableDomain = Resolve(opts)
 
           // Get the current hash of the website
-          currentHash = sh(returnStdout: true, script: "ipfs name resolve /ipns/$resolvableDomain").trim()
+          currentHash = sh(returnStdout: true, script: "ipfs name resolve /ipns/$resolvableDomain || true").trim()
 
           // Get the list of previous versions if it exists
           sh "ipfs get $currentHash/_previous-versions > _previous-versions || true"
