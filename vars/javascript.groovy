@@ -18,11 +18,13 @@ import groovy.transform.Field
 // Step for running tests on a specific nodejs version with windows
 def windowsStep (version) {
   node(label: 'windows') { ansiColor('xterm') { withEnv(['CI=true']) {
+    def ciContext = 'continuous-integration/jenkins/windows/' + version
+    githubNotify description: 'Tests in progress',  status: 'PENDING', context: ciContext
     // need to make sure we're using the right line endings
     bat 'git config --global core.autocrlf input'
     checkout scm
     fileExists 'package.json'
-    nodejs('9.2.0') {
+    nodejs(version) {
       // delete node_modules if it's there
       bat 'del /s /q node_modules >nul 2>&1'
       // install local version of yarn (prevent concurrency issues again)
@@ -34,7 +36,9 @@ def windowsStep (version) {
       // run actual tests
       try {
         bat yarnPath + ' test'
+        githubNotify description: 'Tests passed',  status: 'SUCCESS', context: ciContext
       } catch (err) {
+        githubNotify description: 'Tests failed',  status: 'FAILURE', context: ciContext
         throw err
       } finally {
         junit allowEmptyResults: true, testResults: 'junit-report-*.xml'
@@ -47,6 +51,8 @@ def windowsStep (version) {
 // Step for running tests on a specific nodejs version with unix compatible OS
 def unixStep(version, nodeLabel) {
   node(label: nodeLabel) { ansiColor('xterm') { withEnv(['CI=true']) {
+    def ciContext = 'continuous-integration/jenkins/' + nodeLabel + '/' + version
+    githubNotify description: 'Tests in progress',  status: 'PENDING', context: ciContext
     checkout scm
     fileExists 'package.json'
     nodejs(version) {
@@ -57,11 +63,14 @@ def unixStep(version, nodeLabel) {
         if (nodeLabel == 'linux') { // if it's linux, we need xvfb for display emulation (chrome)
           wrap([$class: 'Xvfb', parallelBuild: true, autoDisplayName: true]) {
             sh yarnPath + ' test'
+            githubNotify description: 'Tests passed',  status: 'SUCCESS', context: ciContext
           }
         } else {
           sh yarnPath + ' test'
+          githubNotify description: 'Tests passed',  status: 'SUCCESS', context: ciContext
         }
       } catch (err) {
+        githubNotify description: 'Tests failed',  status: 'FAILURE', context: ciContext
         throw err
       } finally {
         junit allowEmptyResults: true, testResults: 'junit-report-*.xml'
@@ -95,13 +104,21 @@ def call() {
       }
   }
   steps['linting'] = {node(label: 'linux') { ansiColor('xterm') { withEnv(['CI=true']) {
+    def ciContext = 'continuous-integration/jenkins/linting'
+    githubNotify description: 'Linting in progress',  status: 'PENDING', context: ciContext
     checkout scm
     fileExists 'package.json'
     nodejs('9.2.0') {
         sh 'rm -rf node_modules/'
         sh 'npm install yarn@' + yarnVersion
         sh yarnPath + ' --mutex network'
-        sh yarnPath + ' lint'
+        try {
+          sh yarnPath + ' lint'
+          githubNotify description: 'Linting passed',  status: 'SUCCESS', context: ciContext
+        } catch (err) {
+          githubNotify description: 'Linting failed',  status: 'FAILURE', context: ciContext
+          throw err
+        }
     }
   }}}}
   // Maximum runtime: 1 hour
@@ -111,3 +128,4 @@ def call() {
   }
  }
 }
+
