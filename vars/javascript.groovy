@@ -1,6 +1,6 @@
 import groovy.transform.Field
 // Which NodeJS versions to test on
-@Field final List nodejsVersionsToTest = [
+@Field final List defaultNodeVersions = [
   '8.9.1',
   '9.2.0'
 ]
@@ -18,7 +18,7 @@ import groovy.transform.Field
 // Step for running tests on a specific nodejs version with windows
 def windowsStep (version) {
   node(label: 'windows') { ansiColor('xterm') { withEnv(['CI=true']) {
-    def ciContext = 'continuous-integration/jenkins/windows/' + version
+    def ciContext = 'ci/jenkins/windows/' + version
     githubNotify description: 'Tests in progress',  status: 'PENDING', context: ciContext
     // need to make sure we're using the right line endings
     bat 'git config --global core.autocrlf input'
@@ -51,7 +51,7 @@ def windowsStep (version) {
 // Step for running tests on a specific nodejs version with unix compatible OS
 def unixStep(version, nodeLabel) {
   node(label: nodeLabel) { ansiColor('xterm') { withEnv(['CI=true']) {
-    def ciContext = 'continuous-integration/jenkins/' + nodeLabel + '/' + version
+    def ciContext = 'ci/jenkins/' + nodeLabel + '/' + version
     githubNotify description: 'Tests in progress',  status: 'PENDING', context: ciContext
     checkout scm
     fileExists 'package.json'
@@ -92,19 +92,35 @@ def getStep(os, version) {
   }
 }
 
+// Helper to receive the value if it's not empty, or return a default value
+def defVal (value, defaultValue) {
+  if (value == null || value == []) {
+    return defaultValue
+  } else {
+    if (value instanceof java.util.LinkedHashMap) {
+      return value + defaultValue
+    } else {
+      return value
+    }
+  }
+}
 
-def call() {
+
+def call(opts = []) {
+ def versions = defVal(opts['env'], defaultNodeVersions)
+ def coverageEnabled = defVal(opts['coverage'], false)
+
  stage('Tests') {
   // Create map for all the os+version combinations
   def steps = [:]
   for (os in osToTests) {
-      for (nodejsVersion in nodejsVersionsToTest) {
+      for (nodejsVersion in versions) {
           def stepName = os + ' - ' + nodejsVersion
           steps[(stepName)] = getStep(os, nodejsVersion)
       }
   }
   steps['linting'] = {node(label: 'linux') { ansiColor('xterm') { withEnv(['CI=true']) {
-    def ciContext = 'continuous-integration/jenkins/linting'
+    def ciContext = 'ci/jenkins/linting'
     githubNotify description: 'Linting in progress',  status: 'PENDING', context: ciContext
     checkout scm
     fileExists 'package.json'
@@ -121,6 +137,39 @@ def call() {
         }
     }
   }}}}
+  if (coverageEnabled) {
+    steps['coverage'] = {node(label: 'linux') { ansiColor('xterm') { withEnv(['CI=true']) {
+      def ciContext = 'ci/jenkins/coverage'
+      githubNotify description: 'Code Coverage in progress',  status: 'PENDING', context: ciContext
+      checkout scm
+      fileExists 'package.json'
+      nodejs('9.2.0') {
+          sh 'rm -rf node_modules/'
+          sh 'npm install yarn@' + yarnVersion
+          sh yarnPath + ' --mutex network'
+          // TODO should be using default aegir instead of patched one
+          sh yarnPath + ' add https://github.com/victorbjelkholm/aegir'
+          try {
+            sh yarnPath + ' coverage'
+            sh 'cat coverage/cobertura-coverage.xml'
+          } catch (err) {
+            println err
+          }
+          cobertura(
+            autoUpdateHealth: false,
+            autoUpdateStability: false,
+            coberturaReportFile: 'coverage/cobertura-coverage.xml',
+            conditionalCoverageTargets: '80, 0, 0',
+            lineCoverageTargets: '80, 0, 0',
+            maxNumberOfBuilds: 0,
+            methodCoverageTargets: '80, 0, 0',
+            zoomCoverageChart: false,
+            onlyStable: false
+          )
+          githubNotify description: 'Code Coverage generated',  status: 'SUCCESS', context: ciContext
+      }
+    }}}}
+  }
   // Maximum runtime: 1 hour
   timeout(time: 1, unit: 'HOURS') {
     // execute those steps in parallel
