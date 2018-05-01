@@ -34,6 +34,10 @@ def call(opts = []) {
   def buildDirectory = './public'
   def disablePublish = false
 
+  if (record instanceof CharSequence) {
+    record = ['master': record]
+  }
+
   if (opts['build_directory']) {
     buildDirectory = opts['build_directory']
   }
@@ -109,13 +113,13 @@ def call(opts = []) {
         def websiteUrl = "https://ipfs.io/ipfs/$websiteHash"
         sh "set +x && curl -X POST -H 'Content-Type: application/json' --data '{\"state\": \"success\", \"target_url\": \"$websiteUrl\", \"description\": \"A rendered preview of this commit\", \"context\": \"Rendered Preview\"}' -H \"Authorization: Bearer \$(cat /tmp/userauthtoken)\" https://api.github.com/repos/$githubOrg/$githubRepo/statuses/$gitCommit"
         echo "New website: $websiteUrl"
-        if ("$BRANCH_NAME" == "master" && !disablePublish) {
+        if (record["$BRANCH_NAME"] && !disablePublish) {
           sh 'wget https://ipfs.io/ipfs/QmRhdziJEm7ZaLBB3H7XGcKF8FJW6QpAqGmyB2is4QVN4L/dnslink-dnsimple -O dnslink-dnsimple'
           sh 'chmod +x dnslink-dnsimple'
           token = readFile '/tmp/dnsimpletoken'
           token = token.trim()
           withEnv(["DNSIMPLE_TOKEN=$token"]) {
-              sh "./dnslink-dnsimple $website /ipfs/$websiteHash $record"
+              sh "./dnslink-dnsimple $website /ipfs/$websiteHash ${record["$BRANCH_NAME"]}"
           }
         }
     }
