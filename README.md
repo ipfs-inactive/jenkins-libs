@@ -59,6 +59,20 @@ website([
 ])
 ```
 
+### Example with multiple branches/records
+
+This example will map `release` branch to `_dnslink` record, and `master` branch to `_dnslink.dev` record. This allows us to have development and production deployments, depending on which branch gets updated.
+
+```groovy
+website([
+  website: 'igis.io',
+  record: [
+    'release': '_dnslink',
+    'master': '_dnslink.dev',
+  ]
+])
+```
+
 ## License
 
 MIT 2017
