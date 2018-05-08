@@ -103,8 +103,8 @@ def call() {
           steps[(stepName)] = getStep(os, nodejsVersion)
       }
   }
-  steps['linting'] = {node(label: 'linux') { ansiColor('xterm') { withEnv(['CI=true']) {
-    def ciContext = 'continuous-integration/jenkins/linting'
+  steps['codelint'] = {node(label: 'linux') { ansiColor('xterm') { withEnv(['CI=true']) {
+    def ciContext = 'ci/jenkins/codelint'
     githubNotify description: 'Linting in progress',  status: 'PENDING', context: ciContext
     checkout scm
     fileExists 'package.json'
@@ -114,6 +114,26 @@ def call() {
         sh yarnPath + ' --mutex network'
         try {
           sh yarnPath + ' lint'
+          githubNotify description: 'Linting passed',  status: 'SUCCESS', context: ciContext
+        } catch (err) {
+          githubNotify description: 'Linting failed',  status: 'FAILURE', context: ciContext
+          throw err
+        }
+    }
+  }}}}
+  steps['commitlint'] = {node(label: 'linux') { ansiColor('xterm') { withEnv(['CI=true']) {
+    def ciContext = 'ci/jenkins/commitlint'
+    githubNotify description: 'Linting in progress',  status: 'PENDING', context: ciContext
+    checkout scm
+    fileExists 'package.json'
+    nodejs('9.2.0') {
+        sh 'rm -rf node_modules/'
+        sh 'npm install yarn@' + yarnVersion
+        sh yarnPath + ' add @commitlint/config-conventional @commitlint/cli'
+        try {
+          def commit = sh(returnStdout: true, script: "git rev-parse remotes/origin/$BRANCH_NAME").trim()
+          sh 'git remote set-branches origin master && git fetch'
+          sh "./node_modules/.bin/commitlint --extends=@commitlint/config-conventional --from=remotes/origin/master --to=$commit"
           githubNotify description: 'Linting passed',  status: 'SUCCESS', context: ciContext
         } catch (err) {
           githubNotify description: 'Linting failed',  status: 'FAILURE', context: ciContext
