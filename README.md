@@ -51,6 +51,17 @@ but you can customize it by providing `['nodejs_versions': ['10.0.0']]` to the `
 javascript(['nodejs_versions': ['10.0.0']])
 ```
 
+You can also specify custom versions of node modules in the pipeline.
+
+```
+javascript([
+    'node_modules': [
+        'datastore-fs': 'github:ipfs/js-datastore-fs#fix/node10',
+        'datastore-level': 'github:ipfs/js-datastore-level#fix/node10'
+    ]
+])
+```
+
 
 ## Website Preview and Deployment (hugo only)
 

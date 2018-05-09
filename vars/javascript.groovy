@@ -16,7 +16,7 @@ import groovy.transform.Field
 @Field final String yarnPath = './node_modules/.bin/yarn'
 
 // Step for running tests on a specific nodejs version with windows
-def windowsStep (version) {
+def windowsStep (version, customModules) {
   node(label: 'windows') { ansiColor('xterm') { withEnv(['CI=true']) {
     def ciContext = 'continuous-integration/jenkins/windows/' + version
     githubNotify description: 'Tests in progress',  status: 'PENDING', context: ciContext
@@ -33,6 +33,8 @@ def windowsStep (version) {
       bat yarnPath + ' config set msvs_version 2015 --global'
       // install dependencies with a mutex lock
       bat yarnPath + ' --mutex network'
+      // Install custom modules if any
+      installCustomModules(customModules, true)
       // run actual tests
       try {
         bat yarnPath + ' test'
@@ -49,7 +51,7 @@ def windowsStep (version) {
 }
 
 // Step for running tests on a specific nodejs version with unix compatible OS
-def unixStep(version, nodeLabel) {
+def unixStep(version, nodeLabel, customModules) {
   node(label: nodeLabel) { ansiColor('xterm') { withEnv(['CI=true']) {
     def ciContext = 'continuous-integration/jenkins/' + nodeLabel + '/' + version
     githubNotify description: 'Tests in progress',  status: 'PENDING', context: ciContext
@@ -59,6 +61,7 @@ def unixStep(version, nodeLabel) {
       sh 'rm -rf node_modules/'
       sh 'npm install yarn@' + yarnVersion
       sh yarnPath + ' --mutex network'
+      installCustomModules(customModules, false)
       try {
         if (nodeLabel == 'linux') { // if it's linux, we need xvfb for display emulation (chrome)
           wrap([$class: 'Xvfb', parallelBuild: true, autoDisplayName: true]) {
@@ -81,13 +84,13 @@ def unixStep(version, nodeLabel) {
 }
 
 // Helper function for getting the right platform + version
-def getStep(os, version) {
+def getStep(os, version, customModules) {
   return {
     if (os == 'macos' || os == 'linux') {
-      return unixStep(version, os)
+      return unixStep(version, os, customModules)
     }
     if (os == 'windows') {
-      return windowsStep(version)
+      return windowsStep(version, customModules)
     }
   }
 }
@@ -106,16 +109,32 @@ def defVal (value, defaultValue) {
   }
 }
 
+def installCustomModules (modules, isWindows) {
+  if (modules != []) {
+    def modulesAsString = modules.collect {
+      it.key + "@" + it.value
+    }.join(" ")
+    if (isWindows) {
+      bat yarnPath + ' add ' + modulesAsString
+    } else {
+      sh yarnPath + ' add ' + modulesAsString
+    }
+  }
+}
+
 
 def call(opts = []) {
  def nodejsVersions = defVal(opts['nodejs_versions'], defaultNodeVersions)
+ def customModules = defVal(opts['node_modules'], [])
+
+
  stage('Tests') {
   // Create map for all the os+version combinations
   def steps = [:]
   for (os in osToTests) {
       for (nodejsVersion in nodejsVersions) {
           def stepName = os + ' - ' + nodejsVersion
-          steps[(stepName)] = getStep(os, nodejsVersion)
+          steps[(stepName)] = getStep(os, nodejsVersion, customModules)
       }
   }
   steps['codelint'] = {node(label: 'linux') { ansiColor('xterm') { withEnv(['CI=true']) {
@@ -127,6 +146,7 @@ def call(opts = []) {
         sh 'rm -rf node_modules/'
         sh 'npm install yarn@' + yarnVersion
         sh yarnPath + ' --mutex network'
+        installCustomModules(customModules, false)
         try {
           sh yarnPath + ' lint'
           githubNotify description: 'Linting passed',  status: 'SUCCESS', context: ciContext
