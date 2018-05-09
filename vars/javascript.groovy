@@ -1,6 +1,6 @@
 import groovy.transform.Field
 // Which NodeJS versions to test on
-@Field final List nodejsVersionsToTest = [
+@Field final List defaultNodeVersions = [
   '8.11.1',
   '9.2.0'
 ]
@@ -93,12 +93,27 @@ def getStep(os, version) {
 }
 
 
-def call() {
+// Helper to receive the value if it's not empty, or return a default value
+def defVal (value, defaultValue) {
+  if (value == null || value == []) {
+    return defaultValue
+  } else {
+    if (value instanceof java.util.LinkedHashMap) {
+      return value + defaultValue
+    } else {
+      return value
+    }
+  }
+}
+
+
+def call(opts = []) {
+ def nodejsVersions = defVal(opts['nodejs_versions'], defaultNodeVersions)
  stage('Tests') {
   // Create map for all the os+version combinations
   def steps = [:]
   for (os in osToTests) {
-      for (nodejsVersion in nodejsVersionsToTest) {
+      for (nodejsVersion in nodejsVersions) {
           def stepName = os + ' - ' + nodejsVersion
           steps[(stepName)] = getStep(os, nodejsVersion)
       }
