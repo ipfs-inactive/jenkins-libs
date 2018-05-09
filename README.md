@@ -44,6 +44,14 @@ Runs tests for JavaScript projects. Needs to implement `npm test`/`yarn test` in
 javascript()
 ```
 
+By default, we run tests on Windows, Linux and macOS with NodeJS versions 8.11.1 and 9.2.0
+but you can customize it by providing `['nodejs_versions': ['10.0.0']]` to the `javascript()` function.
+
+```groovy
+javascript(['nodejs_versions': ['10.0.0']])
+```
+
+
 ## Website Preview and Deployment (hugo only)
 
 Builds commits and publishes previews over IPFS for websites using hugo. If commit is on master branch, deploys that commit via dnslink-dnsimple as well.
