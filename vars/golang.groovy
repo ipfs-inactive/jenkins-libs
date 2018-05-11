@@ -24,7 +24,7 @@ def call(opts = []) {
         windows: {
           node(label: 'windows') {
             ansiColor('xterm') {
-              def root = tool name: '1.9.2', type: 'go'
+              def root = tool name: '1.10.2', type: 'go'
               def jobNameArr = "${JOB_NAME}"
               def jobName = jobNameArr.split("/")[0..1].join("\\\\").toLowerCase()
               def originalWs = "${WORKSPACE}"
@@ -53,7 +53,7 @@ def call(opts = []) {
         linux: {
           node(label: 'linux') {
             ansiColor('xterm') {
-              def root = tool name: '1.9.2', type: 'go'
+              def root = tool name: '1.10.2', type: 'go'
               def jobNameArr = "${JOB_NAME}"
               def jobName = jobNameArr.split("/")[0..1].join("/").toLowerCase()
               def originalWs = "${WORKSPACE}"
@@ -82,7 +82,7 @@ def call(opts = []) {
         macOS: {
           node(label: 'macos') {
             ansiColor('xterm') {
-              def root = tool name: '1.9.2', type: 'go'
+              def root = tool name: '1.10.2', type: 'go'
               def jobNameArr = "${JOB_NAME}"
               def jobName = jobNameArr.split("/")[0..1].join("/").toLowerCase()
               def originalWs = "${WORKSPACE}"
