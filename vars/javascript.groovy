@@ -32,7 +32,7 @@ def windowsStep (version, customModules) {
       // force visual studio version
       bat yarnPath + ' config set msvs_version 2015 --global'
       // install dependencies with a mutex lock
-      bat yarnPath + ' --mutex network'
+      bat yarnPath + ' --mutex network --no-lockfile'
       // Install custom modules if any
       installCustomModules(customModules, true)
       // run actual tests
@@ -60,7 +60,7 @@ def unixStep(version, nodeLabel, customModules) {
     nodejs(version) {
       sh 'rm -rf node_modules/'
       sh 'npm install yarn@' + yarnVersion
-      sh yarnPath + ' --mutex network'
+      sh yarnPath + ' --mutex network --no-lockfile'
       installCustomModules(customModules, false)
       try {
         if (nodeLabel == 'linux') { // if it's linux, we need xvfb for display emulation (chrome)
@@ -145,7 +145,7 @@ def call(opts = []) {
     nodejs('9.2.0') {
         sh 'rm -rf node_modules/'
         sh 'npm install yarn@' + yarnVersion
-        sh yarnPath + ' --mutex network'
+        sh yarnPath + ' --mutex network --no-lockfile'
         installCustomModules(customModules, false)
         try {
           sh yarnPath + ' lint'
@@ -164,7 +164,7 @@ def call(opts = []) {
     nodejs('9.2.0') {
         sh 'rm -rf node_modules/'
         sh 'npm install yarn@' + yarnVersion
-        sh yarnPath + ' add @commitlint/config-conventional @commitlint/cli'
+        sh yarnPath + ' add --no-lockfile @commitlint/config-conventional @commitlint/cli'
         try {
           def commit = sh(returnStdout: true, script: "git rev-parse remotes/origin/$BRANCH_NAME").trim()
           sh 'git remote set-branches origin master && git fetch'
