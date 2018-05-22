@@ -77,6 +77,7 @@ def call(opts = []) {
           sh "ipfs get $currentHash/_previous-versions > _previous-versions || true"
 
           // Build Website
+          sh 'docker pull ipfs/ci-websites:latest'
           sh 'docker run -i -v `pwd`:/site ipfs/ci-websites make -C /site build'
 
           // Add the website to IPFS
