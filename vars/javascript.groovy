@@ -16,9 +16,9 @@ import groovy.transform.Field
 @Field final String yarnPath = './node_modules/.bin/yarn'
 
 // Step for running tests on a specific nodejs version with windows
-def windowsStep (version, customModules) {
+def windowsStep (version, customModules, buildStep) {
   node(label: 'windows') { ansiColor('xterm') { withEnv(['CI=true']) {
-    def ciContext = 'continuous-integration/jenkins/windows/' + version
+    def ciContext = 'continuous-integration/jenkins/windows/' + version + '/' + buildStep
     githubNotify description: 'Tests in progress',  status: 'PENDING', context: ciContext
     // need to make sure we're using the right line endings
     bat 'git config --global core.autocrlf input'
@@ -37,7 +37,7 @@ def windowsStep (version, customModules) {
       installCustomModules(customModules, true)
       // run actual tests
       try {
-        bat yarnPath + ' test'
+        bat yarnPath + ' ' + buildStep
         githubNotify description: 'Tests passed',  status: 'SUCCESS', context: ciContext
       } catch (err) {
         githubNotify description: 'Tests failed',  status: 'FAILURE', context: ciContext
@@ -51,9 +51,9 @@ def windowsStep (version, customModules) {
 }
 
 // Step for running tests on a specific nodejs version with unix compatible OS
-def unixStep(version, nodeLabel, customModules) {
+def unixStep(version, nodeLabel, customModules, buildStep) {
   node(label: nodeLabel) { ansiColor('xterm') { withEnv(['CI=true']) {
-    def ciContext = 'continuous-integration/jenkins/' + nodeLabel + '/' + version
+    def ciContext = 'continuous-integration/jenkins/' + nodeLabel + '/' + version + '/' + buildStep
     githubNotify description: 'Tests in progress',  status: 'PENDING', context: ciContext
     checkout scm
     fileExists 'package.json'
@@ -65,11 +65,11 @@ def unixStep(version, nodeLabel, customModules) {
       try {
         if (nodeLabel == 'linux') { // if it's linux, we need xvfb for display emulation (chrome)
           wrap([$class: 'Xvfb', parallelBuild: true, autoDisplayName: true]) {
-            sh yarnPath + ' test'
+            sh yarnPath + ' ' + buildStep
             githubNotify description: 'Tests passed',  status: 'SUCCESS', context: ciContext
           }
         } else {
-          sh yarnPath + ' test'
+          sh yarnPath + ' ' + buildStep
           githubNotify description: 'Tests passed',  status: 'SUCCESS', context: ciContext
         }
       } catch (err) {
@@ -84,13 +84,13 @@ def unixStep(version, nodeLabel, customModules) {
 }
 
 // Helper function for getting the right platform + version
-def getStep(os, version, customModules) {
+def getStep(os, version, customModules, buildStep) {
   return {
     if (os == 'macos' || os == 'linux') {
-      return unixStep(version, os, customModules)
+      return unixStep(version, os, customModules, buildStep)
     }
     if (os == 'windows') {
-      return windowsStep(version, customModules)
+      return windowsStep(version, customModules, buildStep)
     }
   }
 }
@@ -122,19 +122,22 @@ def installCustomModules (modules, isWindows) {
   }
 }
 
-
 def call(opts = []) {
  def nodejsVersions = defVal(opts['nodejs_versions'], defaultNodeVersions)
  def customModules = defVal(opts['node_modules'], [])
-
+ // TODO right now, each customBuildStep will be run in parallel with each other
+ // we should enable the use-case where we want them to run after each other
+ def customBuildSteps = defVal(opts['custom_build_steps'], ['test'])
 
  stage('Tests') {
   // Create map for all the os+version combinations
   def steps = [:]
   for (os in osToTests) {
       for (nodejsVersion in nodejsVersions) {
-          def stepName = os + ' - ' + nodejsVersion
-          steps[(stepName)] = getStep(os, nodejsVersion, customModules)
+          for (buildStep in customBuildSteps) {
+            def stepName = os + ' - ' + nodejsVersion + ' - ' + buildStep
+            steps[(stepName)] = getStep(os, nodejsVersion, customModules, buildStep)
+          }
       }
   }
   steps['codelint'] = {node(label: 'linux') { ansiColor('xterm') { withEnv(['CI=true']) {

@@ -53,12 +53,21 @@ javascript(['nodejs_versions': ['10.0.0']])
 
 You can also specify custom versions of node modules in the pipeline.
 
-```
+```groovy
 javascript([
     'node_modules': [
         'datastore-fs': 'github:ipfs/js-datastore-fs#fix/node10',
         'datastore-level': 'github:ipfs/js-datastore-level#fix/node10'
     ]
+])
+```
+
+If you want to run a different command rather than `yarn test`, you can specify
+it with `custom_build_steps`. Each step will run in parallel on different workers by default.
+
+```groovy
+javascript([
+    'custom_build_steps': ['test:browser', 'test:webworker', 'test:node']
 ])
 ```
 
