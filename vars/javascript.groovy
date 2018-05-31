@@ -18,7 +18,7 @@ import groovy.transform.Field
 // Step for running tests on a specific nodejs version with windows
 def windowsStep (version, customModules, buildStep) {
   node(label: 'windows') { ansiColor('xterm') { withEnv(['CI=true']) {
-    def ciContext = 'continuous-integration/jenkins/windows/' + version + '/' + buildStep
+    def ciContext = 'ci/jenkins/windows/' + version + '/' + buildStep
     githubNotify description: 'Tests in progress',  status: 'PENDING', context: ciContext
     // need to make sure we're using the right line endings
     bat 'git config --global core.autocrlf input'
@@ -53,7 +53,7 @@ def windowsStep (version, customModules, buildStep) {
 // Step for running tests on a specific nodejs version with unix compatible OS
 def unixStep(version, nodeLabel, customModules, buildStep) {
   node(label: nodeLabel) { ansiColor('xterm') { withEnv(['CI=true']) {
-    def ciContext = 'continuous-integration/jenkins/' + nodeLabel + '/' + version + '/' + buildStep
+    def ciContext = 'ci/jenkins/' + nodeLabel + '/' + version + '/' + buildStep
     githubNotify description: 'Tests in progress',  status: 'PENDING', context: ciContext
     checkout scm
     fileExists 'package.json'
