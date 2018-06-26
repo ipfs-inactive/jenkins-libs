@@ -71,11 +71,12 @@ javascript([
 ])
 ```
 
-Code coverage reporting via CodeCov is currently not activated by default but you can activate
-it by setting `coverage` to `true` when calling `javascript()`
+Code coverage reporting via CodeCov is currently activated by default but you can disable
+it by setting `coverage` to `false` when calling `javascript()`. When enabled, it'll
+run `yarn coverage -u -p codecov` automatically in a separate agent to upload the metrics.
 
 ```groovy
-javascript([coverage: true])
+javascript([coverage: false])
 ```
 
 

@@ -128,7 +128,7 @@ def call(opts = []) {
  // TODO right now, each customBuildStep will be run in parallel with each other
  // we should enable the use-case where we want them to run after each other
  def customBuildSteps = defVal(opts['custom_build_steps'], ['test'])
- def coverageEnabled = defVal(opts['coverage'], false)
+ def coverageEnabled = defVal(opts['coverage'], true)
 
  stage('Tests') {
   // Create map for all the os+version combinations
