@@ -128,6 +128,7 @@ def call(opts = []) {
  // TODO right now, each customBuildStep will be run in parallel with each other
  // we should enable the use-case where we want them to run after each other
  def customBuildSteps = defVal(opts['custom_build_steps'], ['test'])
+ def coverageEnabled = defVal(opts['coverage'], false)
 
  stage('Tests') {
   // Create map for all the os+version combinations
@@ -156,6 +157,8 @@ def call(opts = []) {
         } catch (err) {
           githubNotify description: 'Linting failed',  status: 'FAILURE', context: ciContext
           throw err
+        } finally {
+          cleanWs()
         }
     }
   }}}}
@@ -176,9 +179,35 @@ def call(opts = []) {
         } catch (err) {
           githubNotify description: 'Linting failed',  status: 'FAILURE', context: ciContext
           throw err
+        } finally {
+          cleanWs()
         }
     }
   }}}}
+  if (coverageEnabled) {
+    steps['coverage'] = {node(label: 'linux') { ansiColor('xterm') { withEnv(['CI=true']) {
+      checkout scm
+      fileExists 'package.json'
+      nodejs('9.2.0') {
+        sh 'npm install yarn@' + yarnVersion
+        sh yarnPath + ' --mutex network'
+        try {
+          sh 'env | sort'
+          def repo = sh(returnStdout: true, script: "git remote get-url origin | cut -d '/' -f 4,5 | cut -d '.' -f 1").trim()
+          withCredentials([string(credentialsId: 'codecov-test-access-code', variable: 'CODECOV_ACCESS_TOKEN')]) {
+            def codecovToken = sh(returnStdout: true, script: "curl --silent \"https://codecov.io/api/gh/$repo?access_token=\$CODECOV_ACCESS_TOKEN\" | node -e \"let data = '';process.stdin.on('data', (d) => data = data + d.toString());process.stdin.on('end', () => console.log(JSON.parse(data).repo.upload_token));\"").trim()
+            withEnv(["CODECOV_TOKEN=$codecovToken"]) {
+              sh yarnPath + ' coverage -u -p codecov'
+            }
+          }
+        } catch (err) {
+          println err
+        } finally {
+          cleanWs()
+        }
+      }
+    }}}}
+  }
   // Maximum runtime: 1 hour
   timeout(time: 1, unit: 'HOURS') {
     // execute those steps in parallel

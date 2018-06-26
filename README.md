@@ -71,6 +71,13 @@ javascript([
 ])
 ```
 
+Code coverage reporting via CodeCov is currently not activated by default but you can activate
+it by setting `coverage` to `true` when calling `javascript()`
+
+```groovy
+javascript([coverage: true])
+```
+
 
 ## Website Preview and Deployment (hugo only)
 
