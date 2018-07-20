@@ -13,7 +13,7 @@ import groovy.transform.Field
 // Global for which yarn version to use
 @Field final String yarnVersion = '1.5.1'
 // Global for having the path to yarn (prevent concurrency issue with yarn cache)
-@Field final String yarnPath = './node_modules/.bin/yarn'
+@Field final String yarnPath = './node_modules/.bin/yarn --registry="https://registry.npmjs.com"'
 
 // Step for running tests on a specific nodejs version with windows
 def windowsStep (version, customModules, buildStep) {
