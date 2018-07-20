@@ -11,7 +11,7 @@ import groovy.transform.Field
   'linux'
 ]
 // Global for which yarn version to use
-@Field final String yarnVersion = '1.5.1'
+@Field final String yarnVersion = '1.7.0'
 // Global for having the path to yarn (prevent concurrency issue with yarn cache)
 @Field final String yarnPath = './node_modules/.bin/yarn --registry="https://registry.npmjs.com"'
 
