@@ -2,6 +2,10 @@
 
 This repository is being used for setting up default/standard pipelines for projects in https://github.com/ipfs/jenkins
 
+# Issues
+
+Issues are handled via https://github.com/ipfs/testing
+
 # API
 
 A script that sits in `ci/Jenkinsfile` can access these library functions by calling the name of the file and passing arguments.
