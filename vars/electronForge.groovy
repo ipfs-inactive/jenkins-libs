@@ -18,7 +18,7 @@ def windowsStep () {
       bat 'git config --global core.autocrlf input'
       checkout scm
       fileExists 'package.json'
-      nodejs('9.2.0') {
+      nodejs('10.4.1') {
         // delete node_modules if it's there
         bat 'del /s /q node_modules >nul 2>&1'
         // install local version of yarn (prevent concurrency issues again)
@@ -45,7 +45,7 @@ def unixStep(nodeLabel) {
     ansiColor('xterm') {
       checkout scm
       fileExists 'package.json'
-      nodejs('9.2.0') {
+      nodejs('10.4.1') {
         sh 'rm -rf node_modules/'
         sh 'npm install yarn@' + yarnVersion
         sh yarnPath + ' --mutex network'
