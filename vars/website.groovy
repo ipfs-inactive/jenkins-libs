@@ -93,6 +93,7 @@ def call(opts = []) {
             if (currentHash == '/ipfs/' + websiteHash) {
                 currentBuild.result = hudson.model.Result.SUCCESS.toString()
                 println "This build is already the latest and deployed version"
+                cleanWs()
                 return
             }
 
@@ -100,7 +101,7 @@ def call(opts = []) {
             sh "echo $currentHash >> ./_previous-versions"
             versionsHash = sh(returnStdout: true, script: "ipfs add -Q ./_previous-versions").trim()
             websiteHash = sh(returnStdout: true, script: "ipfs object patch $websiteHash add-link _previous-versions $versionsHash").trim()
-            cleanWs notFailBuild: true
+            cleanWs()
         }
     }
     stage('pin + publish preview + publish dns record update') {
