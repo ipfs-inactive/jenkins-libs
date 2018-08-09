@@ -80,10 +80,19 @@ def call(opts = []) {
 
             // Build Website
             sh 'docker pull ipfs/ci-websites:latest'
-            sh 'docker run -i -v `pwd`:/site ipfs/ci-websites make -C /site build'
+            // Create container
+            def containerID = sh(returnStdout: true, script: "docker create ipfs/ci-websites make -C /site build").trim()
+            // Copy site to container
+            sh "docker cp \$(pwd)/. $containerID:/site"
+            // Run build
+            sh "docker start -ai $containerID"
+            // Grab finished build
+            sh "docker cp $containerID:/site/$buildDirectory ./site"
+            // Remove container
+            sh "docker rm $containerID"
 
             // Add the website to IPFS
-            currentWebsite = sh(returnStdout: true, script: "ipfs add -rQ $buildDirectory").trim()
+            currentWebsite = sh(returnStdout: true, script: "ipfs add -rQ ./site").trim()
 
             // Add the link to the _previous-versions with $currentHash
             versionsHash = sh(returnStdout: true, script: "ipfs add -Q ./_previous-versions").trim()
@@ -130,4 +139,3 @@ def call(opts = []) {
     }
   }
 }
-
