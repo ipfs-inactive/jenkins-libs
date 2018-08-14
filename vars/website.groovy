@@ -117,6 +117,7 @@ def call(opts = []) {
               currentBuild.result = hudson.model.Result.FAILURE.toString()
               sh "docker rm $containerID || true"
               cleanWs()
+              error('Unable to build website. Please check errors above')
             }
         }
     }
