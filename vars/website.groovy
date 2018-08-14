@@ -75,42 +75,49 @@ def call(opts = []) {
             // Get the current hash of the website
             currentHash = sh(returnStdout: true, script: "ipfs name resolve /ipns/$resolvableDomain || true").trim()
 
-            // Get the list of previous versions if it exists
-            sh "ipfs get $currentHash/_previous-versions > _previous-versions || true"
+            def containerID
+            try {
+              // Get the list of previous versions if it exists
+              sh "ipfs get $currentHash/_previous-versions > _previous-versions || true"
 
-            // Build Website
-            sh 'docker pull ipfs/ci-websites:latest'
-            // Create container
-            def containerID = sh(returnStdout: true, script: "docker create ipfs/ci-websites make -C /site build").trim()
-            // Copy site to container
-            sh "docker cp \$(pwd)/. $containerID:/site"
-            // Run build
-            sh "docker start -ai $containerID"
-            // Grab finished build
-            sh "docker cp $containerID:/site/$buildDirectory ./site"
-            // Remove container
-            sh "docker rm $containerID"
+              // Build Website
+              sh 'docker pull ipfs/ci-websites:latest'
+              // Create container
+              containerID = sh(returnStdout: true, script: "docker create ipfs/ci-websites make -C /site build").trim()
+              // Copy site to container
+              sh "docker cp \$(pwd)/. $containerID:/site"
+              // Run build
+              sh "docker start -ai $containerID"
+              // Grab finished build
+              sh "docker cp $containerID:/site/$buildDirectory ./site"
+              // Remove container
+              sh "docker rm $containerID"
 
-            // Add the website to IPFS
-            currentWebsite = sh(returnStdout: true, script: "ipfs add -rQ ./site").trim()
+              // Add the website to IPFS
+              currentWebsite = sh(returnStdout: true, script: "ipfs add -rQ ./site").trim()
 
-            // Add the link to the _previous-versions with $currentHash
-            versionsHash = sh(returnStdout: true, script: "ipfs add -Q ./_previous-versions").trim()
-            websiteHash = sh(returnStdout: true, script: "ipfs object patch $currentWebsite add-link _previous-versions $versionsHash").trim()
+              // Add the link to the _previous-versions with $currentHash
+              versionsHash = sh(returnStdout: true, script: "ipfs add -Q ./_previous-versions").trim()
+              websiteHash = sh(returnStdout: true, script: "ipfs object patch $currentWebsite add-link _previous-versions $versionsHash").trim()
 
-            // If previousHash (currently deployed) is same as websiteHash, we can skip
-            if (currentHash == '/ipfs/' + websiteHash) {
-                currentBuild.result = hudson.model.Result.SUCCESS.toString()
-                println "This build is already the latest and deployed version"
-                cleanWs()
-                return
+              // If previousHash (currently deployed) is same as websiteHash, we can skip
+              if (currentHash == '/ipfs/' + websiteHash) {
+                  currentBuild.result = hudson.model.Result.SUCCESS.toString()
+                  println "This build is already the latest and deployed version"
+                  cleanWs()
+                  return
+              }
+
+              // Now we just have to add the previous link before
+              sh "echo $currentHash >> ./_previous-versions"
+              versionsHash = sh(returnStdout: true, script: "ipfs add -Q ./_previous-versions").trim()
+              websiteHash = sh(returnStdout: true, script: "ipfs object patch $websiteHash add-link _previous-versions $versionsHash").trim()
+              cleanWs()
+            } catch (err) {
+              currentBuild.result = hudson.model.Result.FAILURE.toString()
+              sh "docker rm $containerID || true"
+              cleanWs()
             }
-
-            // Now we just have to add the previous link before
-            sh "echo $currentHash >> ./_previous-versions"
-            versionsHash = sh(returnStdout: true, script: "ipfs add -Q ./_previous-versions").trim()
-            websiteHash = sh(returnStdout: true, script: "ipfs object patch $websiteHash add-link _previous-versions $versionsHash").trim()
-            cleanWs()
         }
     }
     stage('pin + publish preview + publish dns record update') {
