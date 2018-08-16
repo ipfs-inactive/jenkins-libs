@@ -1,8 +1,8 @@
 import groovy.transform.Field
 // Which NodeJS versions to test on
 @Field final List defaultNodeVersions = [
-  '8.11.3',
-  '10.5.0'
+  '8.11.4',
+  '10.9.0'
 ]
 // Which OSes to test on
 @Field final List osToTests = [
