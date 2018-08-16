@@ -26,7 +26,7 @@ def windowsStep (version, customModules, buildStep) {
     fileExists 'package.json'
     nodejs(version) {
       // delete node_modules if it's there
-      bat 'del /s /q node_modules >nul 2>&1'
+      bat 'Cmd /C "rmdir /S /Q node_modules"'
       // install local version of yarn (prevent concurrency issues again)
       bat 'npm install yarn@' + yarnVersion
       // force visual studio version
