@@ -14,6 +14,7 @@ A script that sits in `ci/Jenkinsfile` can access these library functions by cal
 - [Golang](#golang)
 - [JavaScript](#javascript)
 - [Website](#website-preview-and-deployment-hugo-only)
+- [Transifex](#transifex)
 
 ## Electron Forge
 
@@ -111,6 +112,15 @@ website([
     'master': '_dnslink.dev',
   ]
 ])
+```
+
+## Transifex
+
+Uploads source language to [Transifex](https://www.transifex.com/ipfs/public/).
+Runs `tx push -s` if build is for `master` branch that includes `.tx/config`.
+
+```groovy
+transifex()
 ```
 
 ## License
