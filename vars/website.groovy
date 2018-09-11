@@ -6,6 +6,7 @@ def Resolve(opts = []) {
   def zone = opts['website']
   def record = opts['record']
 
+
   if (record) {
     def full = [record, zone].join('.')
     def reg = ~/^_dnslink./
@@ -17,8 +18,7 @@ def Resolve(opts = []) {
 
 def call(opts = []) {
   def hashToPin
-  def nodeIP
-  def nodeMultiaddr
+  def nodeMultiaddrs
   def websiteHash
   def previousWebsiteHash
 
@@ -30,7 +30,9 @@ def call(opts = []) {
   assert opts['record'] : "You need to pass in name of the record as the `record` argument "
 
   def website = opts['website']
+  // Need to take into account BRANCH_NAME here
   def record = opts['record']
+  // def record = opts['record']["$BRANCH_NAME"]
   def buildDirectory = './public'
   def disablePublish = false
 
@@ -51,8 +53,7 @@ def call(opts = []) {
     stage('build website') {
         node(label: 'linux') {
             // Figure out our IP + Multiaddr for master to ensure connection
-            nodeIP = sh returnStdout: true, script: 'dig +short myip.opendns.com @resolver1.opendns.com'
-            nodeMultiaddr = sh returnStdout: true, script: "ipfs id --format='<addrs>\n' | grep $nodeIP"
+            nodeMultiaddrs = sh returnStdout: true, script: "ipfs id --format='<addrs>\n'"
             def details = checkout scm
 
             // Parse Github Org + Repo
@@ -112,6 +113,7 @@ def call(opts = []) {
               sh "echo $currentHash >> ./_previous-versions"
               versionsHash = sh(returnStdout: true, script: "ipfs add -Q ./_previous-versions").trim()
               websiteHash = sh(returnStdout: true, script: "ipfs object patch $websiteHash add-link _previous-versions $versionsHash").trim()
+              sh "ipfs pin add --progress $websiteHash"
               cleanWs()
             } catch (err) {
               currentBuild.result = hudson.model.Result.FAILURE.toString()
@@ -128,8 +130,18 @@ def call(opts = []) {
       }
       node(label: 'master') {
           withEnv(["IPFS_PATH=/efs/.ipfs"]) {
-              sh "ipfs swarm connect $nodeMultiaddr"
-              sh "ipfs pin add --progress $websiteHash"
+            lines = nodeMultiaddrs.readLines()
+            lines.each { line ->
+              def process = "ipfs swarm connect $line".execute(["IPFS_PATH=/efs/.ipfs"], null)
+              println "ipfs swarm connect $line"
+              def output = new StringWriter(), error = new StringWriter()
+              process.waitForProcessOutput(output, error)
+              println "exit value=${process.exitValue()}"
+              println "OUT: $output"
+              println "ERR: $error"
+            }
+            sh "ipfs refs -r $websiteHash"
+            sh "ipfs pin add --progress $websiteHash"
           }
           def websiteUrl = "https://ipfs.io/ipfs/$websiteHash"
           sh "set +x && curl -X POST -H 'Content-Type: application/json' --data '{\"state\": \"success\", \"target_url\": \"$websiteUrl\", \"description\": \"A rendered preview of this commit\", \"context\": \"Rendered Preview\"}' -H \"Authorization: Bearer \$(cat /tmp/userauthtoken)\" https://api.github.com/repos/$githubOrg/$githubRepo/statuses/$gitCommit"
