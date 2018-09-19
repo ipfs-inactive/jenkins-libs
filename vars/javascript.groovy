@@ -14,6 +14,8 @@ import groovy.transform.Field
 @Field final String yarnVersion = '1.7.0'
 // Global for having the path to yarn (prevent concurrency issue with yarn cache)
 @Field final String yarnPath = './node_modules/.bin/yarn --registry="https://registry.npmjs.com"'
+// Global for how many times `yarn install` should be retried if failing
+@Field final Integer yarnInstallRetries = 3
 
 // Step for running tests on a specific nodejs version with windows
 def windowsStep (version, customModules, buildStep) {
@@ -32,7 +34,9 @@ def windowsStep (version, customModules, buildStep) {
       // force visual studio version
       bat yarnPath + ' config set msvs_version 2015 --global'
       // install dependencies with a mutex lock
-      bat yarnPath + ' --mutex network --no-lockfile'
+      retry(yarnInstallRetries) {
+        bat yarnPath + ' --mutex network --no-lockfile'
+      }
       // Install custom modules if any
       installCustomModules(customModules, true)
       // run actual tests
@@ -60,7 +64,9 @@ def unixStep(version, nodeLabel, customModules, buildStep) {
     nodejs(version) {
       sh 'rm -rf node_modules/'
       sh 'npm install yarn@' + yarnVersion
-      sh yarnPath + ' --mutex network --no-lockfile'
+      retry(yarnInstallRetries) {
+        sh yarnPath + ' --mutex network --no-lockfile'
+      }
       installCustomModules(customModules, false)
       try {
         if (nodeLabel == 'linux') { // if it's linux, we need xvfb for display emulation (chrome)
@@ -149,7 +155,9 @@ def call(opts = []) {
     nodejs('9.2.0') {
         sh 'rm -rf node_modules/'
         sh 'npm install yarn@' + yarnVersion
-        sh yarnPath + ' --mutex network --no-lockfile'
+        retry(yarnInstallRetries) {
+          sh yarnPath + ' --mutex network --no-lockfile'
+        }
         installCustomModules(customModules, false)
         try {
           sh yarnPath + ' lint'
@@ -170,7 +178,9 @@ def call(opts = []) {
     nodejs('9.2.0') {
         sh 'rm -rf node_modules/'
         sh 'npm install yarn@' + yarnVersion
-        sh yarnPath + ' add --no-lockfile @commitlint/config-conventional @commitlint/cli'
+        retry(yarnInstallRetries) {
+          sh yarnPath + ' add --no-lockfile @commitlint/config-conventional @commitlint/cli'
+        }
         try {
           def commit = sh(returnStdout: true, script: "git rev-parse remotes/origin/$BRANCH_NAME").trim()
           sh 'git remote set-branches origin master && git fetch'
@@ -190,7 +200,9 @@ def call(opts = []) {
       fileExists 'package.json'
       nodejs('9.2.0') {
         sh 'npm install yarn@' + yarnVersion
-        sh yarnPath + ' --mutex network'
+        retry(yarnInstallRetries) {
+          sh yarnPath + ' --mutex network'
+        }
         try {
           sh 'env | sort'
           def repo = sh(returnStdout: true, script: "git remote get-url origin | cut -d '/' -f 4,5 | cut -d '.' -f 1").trim()
