@@ -220,11 +220,18 @@ def call(opts = []) {
       }
     }}}}
   }
-  // Maximum runtime: 1 hour
-  timeout(time: 1, unit: 'HOURS') {
-    // execute those steps in parallel
-    parallel steps
+
+  //Apply timeout per step
+  steps = steps.collect { e ->
+    // wrap in additional lambda
+    { it ->
+      timeout(time: 1, unit: 'HOURS') {
+  	    e.value()
+      }
+	}
   }
+
+  parallel steps
  }
 }
 
