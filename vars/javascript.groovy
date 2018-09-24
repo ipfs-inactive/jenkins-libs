@@ -316,6 +316,8 @@ def call(opts = []) {
               jsonData.hasNodeTests = packageHasScript(os, 'test:node')
               jsonData.hasBrowserTests = packageHasScript(os, 'test:browser')
               jsonData.hasWebWorkerTests = packageHasScript(os, 'test:webworker')
+              jsonData.hasLinting = packageHasScript(os, 'lint')
+              jsonData.hasCoverage = packageHasScript(os, 'coverage')
               writeVariableStash('variables', jsonData)
             }}
           }
@@ -352,17 +354,24 @@ def call(opts = []) {
        stage('Checks') {
         steps {
           script {
+            def hasLinting = false
+            node(label: 'linux') { postClean {
+              def data = readVariableStash('variables')
+              hasLinting = data.hasLinting
+            }}
             def os = 'linux'
             def checksSteps = [:]
-            checksSteps['codelint'] = { node(label: os) { postClean {
-              checkout scm
-              unstash 'deps-linux-' + nodejsVersions[0]
-              nodejs(nodejsVersions[0]) {
-                markUnstableIfFail 'code linting', 'codelint', {
-                  run(os, 'npm run lint')
+            if (hasLinting) {
+              checksSteps['codelint'] = { node(label: os) { postClean {
+                checkout scm
+                unstash 'deps-linux-' + nodejsVersions[0]
+                nodejs(nodejsVersions[0]) {
+                  markUnstableIfFail 'code linting', 'codelint', {
+                    run(os, 'npm run lint')
+                  }
                 }
-              }
-            }}}
+              }}}
+            }
             checksSteps['commitlint'] = { node(label: os) { postClean {
               checkout scm
               nodejs(nodejsVersions[0]) {
@@ -394,6 +403,12 @@ def call(opts = []) {
           script {
             def os = 'linux'
             node(label: os) { postClean {
+              def data = readVariableStash('variables')
+              if (!data.hasCoverage) {
+                echo "This repository does not support code coverage"
+                return
+              }
+
               checkout scm
               unstash 'deps-linux-' + nodejsVersions[0]
               nodejs(nodejsVersions[0]) {
