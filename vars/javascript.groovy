@@ -63,12 +63,14 @@ def packageHasScript(os, script) {
 
 // Function to wrap calls that needs to cleanup after themselves
 def postClean (f) {
-  try {
-    f()
-  } catch (err) {
-    throw err
-  } finally {
-    cleanWs()
+  ws {
+    try {
+      f()
+    } catch (err) {
+      throw err
+    } finally {
+      cleanWs()
+    }
   }
 }
 
@@ -117,13 +119,14 @@ def markUnstableIfFail (name, context, f) {
       status: 'FAILURE',
       context: ciContext
     )
-    throw err
+    // throw err
+    currentBuild.result = 'UNSTABLE'
+    println err
   }
   // Uncomment once JENKINS-39203 is fixed
   // try {
   //   f()
   // } catch (err) {
-  //   currentBuild.result = 'UNSTABLE'
   //   println err
   // }
 }
@@ -153,20 +156,21 @@ def runTests (os, nodejsVersions) {
     hasWebWorkerTests = data.hasWebWorkerTests
   }
 
-  def sourceStash = 'source-' + os
   def depsStash = 'deps-' + os + '-' + nodejsVersions[0]
 
-  def linuxSteps = [:]
+  def steps = [:]
   if (hasNodeTests) {
     for (nodejsVersion in nodejsVersions) {
       def version = nodejsVersion
-      def stepName = version + ' test:node'
+      def stepName = os + ':' + version + ' test:node'
       def depsVersionStash = 'deps-' + os + '-' + version
       def context = os + '/' + version + '/test:node'
 
-      linuxSteps[stepName] = {node(label: os) { postClean {
-        unstash sourceStash
-        unstash depsVersionStash
+      steps[stepName] = {node(label: os) { postClean {
+        checkout scm
+        retry (5) {
+          unstash depsVersionStash
+        }
         nodejs(version) {
           collectTestResults { markUnstableIfFail 'node tests', context, {
             run(os, 'npm run test:node')
@@ -176,9 +180,11 @@ def runTests (os, nodejsVersions) {
     }
   }
   if (hasBrowserTests) {
-   linuxSteps['test:browser'] = {node(label: os) { postClean {
-     unstash sourceStash
-     unstash depsStash
+   steps[os + ' test:browser'] = {node(label: os) { postClean {
+     checkout scm
+     retry (5) {
+       unstash depsStash
+     }
      nodejs(nodejsVersions[0]) {
        def testCmd = 'npm run test:browser'
        def context = os + '/test:browser'
@@ -197,9 +203,11 @@ def runTests (os, nodejsVersions) {
    }}}
   }
   if (hasWebWorkerTests) {
-   linuxSteps['test:webworker'] = {node(label: os) { postClean {
-     unstash sourceStash
-     unstash depsStash
+   steps[os + ' test:webworker'] = {node(label: os) { postClean {
+     checkout scm
+     retry (5) {
+       unstash depsStash
+     }
      nodejs(nodejsVersions[0]) {
        def testCmd = 'npm run test:webworker'
        def context = os + '/test:webworker'
@@ -217,7 +225,7 @@ def runTests (os, nodejsVersions) {
      }
    }}}
   }
-  parallel linuxSteps
+  return steps
 }
 
 // Utility function to use with writeVariableStash
@@ -243,8 +251,8 @@ def readVariableStash (name, variable) {
 def call(opts = []) {
   // Which NodeJS versions to use
   def defaultNodeVersions = [
-    '8.11.3',
-    '10.4.1'
+    '10.4.1',
+    '8.11.3'
   ]
   // Which OSes to test on
   def osToTests = [
@@ -279,31 +287,31 @@ def call(opts = []) {
      stages {
        // TODO currently run on each platform due to cross-platform issues, but
        // should be able to run once on linux and shared on platforms
-       stage('Fetch Source') {
-         steps {
-           script {
-             def fetchSteps = [:]
-             for (os in osToTests) {
-              def sourceStash = 'source-' + os
-              fetchSteps[os] = {
-                node(label: os) { postClean {
-                  run(os, 'git config --global core.autocrlf input')
-                  checkout scm
-                  stash name: sourceStash, excludes: 'node_modules/**', useDefaultExcludes: false
-                }}
-              }
-             }
-             parallel(fetchSteps)
-           }
-         }
-       }
+       // stage('Fetch Source') {
+       //   steps {
+       //     script {
+       //       def fetchSteps = [:]
+       //       for (os in osToTests) {
+       //        def currentOS = os
+       //        fetchSteps[currentOS] = {
+       //          node(label: currentOS) { postClean {
+       //            run(currentOS, 'git config --global core.autocrlf input')
+       //            checkout scm
+       //            stash name: sourceStash, excludes: 'node_modules/**', useDefaultExcludes: false
+       //          }}
+       //        }
+       //       }
+       //       parallel(fetchSteps)
+       //     }
+       //   }
+       // }
 
        stage('Check available scripts') {
         steps {
           script {
             def os = 'linux'
             node(label: os) { postClean {
-              unstash 'source-linux'
+              checkout scm
               jsonData = createInitialJSONData()
               jsonData.hasNodeTests = packageHasScript(os, 'test:node')
               jsonData.hasBrowserTests = packageHasScript(os, 'test:browser')
@@ -314,51 +322,28 @@ def call(opts = []) {
         }
        }
 
-       // TODO should be able to run on one platform (linux) and just post-install
-       // on each platform + version but npm works differently on platforms...
-       stage('Fetch Deps') { steps { script {
-         def depsSteps = [:]
-         for (os in osToTests) {
-           def stepName = os
-           def rawDepsStash = 'raw-deps-' + os
-           def sourceStash = 'source-' + os
-           def version = nodejsVersions[0]
-           def currentOS = os
-
-           depsSteps[stepName] = {node(label: currentOS) { postClean {
-             unstash sourceStash
-             nodejs(version) {
-               installDependencies(currentOS, npmVersion, customModules, true)
-               stash name: rawDepsStash, includes: 'node_modules/**', useDefaultExcludes: false
-             }
-           }}}
-         }
-         parallel depsSteps
-       }}}
-       stage('Deps Post-Install') { steps { script {
+       // TODO should be able to run `npm install --ignore-scripts` on one
+       // platform (linux) and just post-install on each platform + version
+       // but npm behaves differently on each platform
+       stage('Install Dependencies') { steps { script {
          def depsSteps = [:]
          for (os in osToTests) {
            for (nodejsVersion in nodejsVersions) {
              def stepName = os + ' - ' + nodejsVersion
-             def rawDepsStash = 'raw-deps-' + os
              def depsStash = 'deps-' + os + '-' + nodejsVersion
-             def sourceStash = 'source-' + os
              def version = nodejsVersion
              def currentOS = os
 
-             depsSteps[stepName] = {node(label: currentOS) { postClean {
-               unstash sourceStash
-               unstash rawDepsStash
+             depsSteps[stepName] = {retry (5) { node(label: currentOS) { ws { postClean {
+               checkout scm
                nodejs(version) {
-                 // Might have to add this at one point but seems fine for now
-                 // installDependencies(currentOS, npmVersion, customModules)
                  if (isWindows(currentOS)) {
                    bat 'npm config set msvs_version 2015 --global'
                  }
-                 run(currentOS, 'npm rebuild')
+                 installDependencies(currentOS, npmVersion, customModules)
                  stash name: depsStash, includes: 'node_modules/**', useDefaultExcludes: false
                }
-             }}}
+             }}}}}
            }
          }
          parallel depsSteps
@@ -370,7 +355,7 @@ def call(opts = []) {
             def os = 'linux'
             def checksSteps = [:]
             checksSteps['codelint'] = { node(label: os) { postClean {
-              unstash 'source-linux'
+              checkout scm
               unstash 'deps-linux-' + nodejsVersions[0]
               nodejs(nodejsVersions[0]) {
                 markUnstableIfFail 'code linting', 'codelint', {
@@ -379,7 +364,7 @@ def call(opts = []) {
               }
             }}}
             checksSteps['commitlint'] = { node(label: os) { postClean {
-              unstash 'source-linux'
+              checkout scm
               nodejs(nodejsVersions[0]) {
                 sh 'npm install --no-lockfile @commitlint/config-conventional @commitlint/cli'
                 def commit = runReturnStdout(os, "git rev-parse remotes/origin/$BRANCH_NAME")
@@ -394,24 +379,13 @@ def call(opts = []) {
         }
        }
 
-       stage('Linux Tests') {
+       stage('Tests') {
         steps {
           script {
-            runTests('linux', nodejsVersions)
-          }
-        }
-       }
-       stage('Windows Tests') {
-        steps {
-          script {
-            runTests('windows', nodejsVersions)
-          }
-        }
-       }
-       stage('macOS Tests') {
-        steps {
-          script {
-            runTests('macos', nodejsVersions)
+            def linux = runTests('linux', nodejsVersions)
+            def macos = runTests('macos', nodejsVersions)
+            def windows = runTests('windows', nodejsVersions)
+            parallel(linux + macos + windows)
           }
         }
        }
@@ -420,7 +394,7 @@ def call(opts = []) {
           script {
             def os = 'linux'
             node(label: os) { postClean {
-              unstash 'source-linux'
+              checkout scm
               unstash 'deps-linux-' + nodejsVersions[0]
               nodejs(nodejsVersions[0]) {
                 def repo = runReturnStdout(os, "git remote get-url origin | cut -d '/' -f 4,5 | cut -d '.' -f 1")
