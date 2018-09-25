@@ -113,6 +113,17 @@ website([
 ])
 ```
 
+## Development
+
+### Replay from CLI
+
+```console
+export ORG=IPFS
+export REPO=js-ipns
+export BRANCH=master
+java -jar jenkins-cli.jar -s https://ci.ipfs.team/ replay-pipeline "$ORG/$REPO/$BRANCH/" -s javascript --username VictorBjelkholm --password $GITHUB_TOKEN < vars/javascript.groovy && firefox "$(curl --silent https://ci.ipfs.team/job/$ORG/job/$REPO/job/$BRANCH/lastBuild/api/json | jq -r .url)/console"
+```
+
 ## License
 
 MIT 2017
