@@ -158,6 +158,12 @@ def runTests (os, nodejsVersions) {
 
   def depsStash = 'deps-' + os + '-' + nodejsVersions[0]
 
+  if (!hasNodeTests && !hasBrowserTests && !hasWebWorkerTests) {
+    println "Found no tests"
+    currentBuild.result = 'FAILURE'
+    throw new Exception("Found no tests")
+  }
+
   def steps = [:]
   if (hasNodeTests) {
     for (nodejsVersion in nodejsVersions) {
