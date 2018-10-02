@@ -425,10 +425,10 @@ def call(opts = []) {
                     variable: 'CODECOV_ACCESS_TOKEN'
                   )]) {
                   def codecovToken = runReturnStdout(os, "curl --silent \"https://codecov.io/api/gh/$repo?access_token=\$CODECOV_ACCESS_TOKEN\" | node -e \"let data = '';process.stdin.on('data', (d) => data = data + d.toString());process.stdin.on('end', () => console.log(JSON.parse(data).repo.upload_token));\"")
-                  withEnv(["CODECOV_TOKEN=$codecovToken"]) {
-                 markUnstableIfFail 'coverage', 'coverage', {
-                   run(os, 'npm run coverage -u -p codecov')
-                 }
+                  withEnv(["CODECOV_TOKEN=$codecovToken", "COVERAGE=true"]) {
+                   markUnstableIfFail 'coverage', 'coverage', {
+                     run(os, 'npm run coverage -- -u -p codecov')
+                   }
                   }
                 }
               }
