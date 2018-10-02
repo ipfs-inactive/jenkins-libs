@@ -63,7 +63,7 @@ def packageHasScript(os, script) {
 
 // Function to wrap calls that needs to cleanup after themselves
 def postClean (f) {
-  ws {
+  ws { timeout(time: 1, unit: 'HOURS') {
     try {
       f()
     } catch (err) {
@@ -71,7 +71,7 @@ def postClean (f) {
     } finally {
       cleanWs()
     }
-  }
+  }}
 }
 
 // Installs dependencies + custom_modules, can turn off/on scripts
