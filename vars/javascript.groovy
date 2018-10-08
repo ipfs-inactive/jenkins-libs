@@ -1,3 +1,8 @@
+def getSource (os) {
+  run(os, 'git config --global core.autocrlf input')
+  checkout scm
+}
+
 // Helper to receive the value if it's not empty, or return a default value
 def defVal (value, defaultValue) {
   if (value == null || value == []) {
@@ -173,7 +178,7 @@ def runTests (os, nodejsVersions) {
       def context = os + '/' + version + '/test:node'
 
       steps[stepName] = {node(label: os) { postClean {
-        checkout scm
+        getSource(os)
         retry (5) {
           unstash depsVersionStash
         }
@@ -187,7 +192,7 @@ def runTests (os, nodejsVersions) {
   }
   if (hasBrowserTests) {
    steps[os + ' test:browser'] = {node(label: os) { postClean {
-     checkout scm
+     getSource(os)
      retry (5) {
        unstash depsStash
      }
@@ -210,7 +215,7 @@ def runTests (os, nodejsVersions) {
   }
   if (hasWebWorkerTests) {
    steps[os + ' test:webworker'] = {node(label: os) { postClean {
-     checkout scm
+     getSource(os)
      retry (5) {
        unstash depsStash
      }
@@ -317,7 +322,7 @@ def call(opts = []) {
           script {
             def os = 'linux'
             node(label: os) { postClean {
-              checkout scm
+              getSource(os)
               jsonData = createInitialJSONData()
               jsonData.hasNodeTests = packageHasScript(os, 'test:node')
               jsonData.hasBrowserTests = packageHasScript(os, 'test:browser')
@@ -343,7 +348,7 @@ def call(opts = []) {
              def currentOS = os
 
              depsSteps[stepName] = {retry (5) { node(label: currentOS) { ws { postClean {
-               checkout scm
+               getSource(currentOS)
                nodejs(version) {
                  if (isWindows(currentOS)) {
                    bat 'npm config set msvs_version 2015 --global'
@@ -369,7 +374,7 @@ def call(opts = []) {
             def checksSteps = [:]
             if (hasLinting) {
               checksSteps['codelint'] = { node(label: os) { postClean {
-                checkout scm
+                getSource(currentOS)
                 unstash 'deps-linux-' + nodejsVersions[0]
                 nodejs(nodejsVersions[0]) {
                   markUnstableIfFail 'code linting', 'codelint', {
@@ -379,7 +384,7 @@ def call(opts = []) {
               }}}
             }
             checksSteps['commitlint'] = { node(label: os) { postClean {
-              checkout scm
+              getSource(os)
               nodejs(nodejsVersions[0]) {
                 sh 'npm install --no-lockfile @commitlint/config-conventional @commitlint/cli'
                 def commit = runReturnStdout(os, "git rev-parse remotes/origin/$BRANCH_NAME")
@@ -415,7 +420,7 @@ def call(opts = []) {
                 return
               }
 
-              checkout scm
+              getSource(os)
               unstash 'deps-linux-' + nodejsVersions[0]
               nodejs(nodejsVersions[0]) {
                 def repo = runReturnStdout(os, "git remote get-url origin | cut -d '/' -f 4,5 | cut -d '.' -f 1")
