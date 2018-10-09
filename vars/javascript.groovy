@@ -262,8 +262,8 @@ def readVariableStash (name, variable) {
 def call(opts = []) {
   // Which NodeJS versions to use
   def defaultNodeVersions = [
-    '10.4.1',
-    '8.11.3'
+    '10.11.0',
+    '8.12.0'
   ]
   // Which OSes to test on
   def osToTests = [
