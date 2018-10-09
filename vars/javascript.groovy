@@ -374,7 +374,7 @@ def call(opts = []) {
             def checksSteps = [:]
             if (hasLinting) {
               checksSteps['codelint'] = { node(label: os) { postClean {
-                getSource(currentOS)
+                getSource(os)
                 unstash 'deps-linux-' + nodejsVersions[0]
                 nodejs(nodejsVersions[0]) {
                   markUnstableIfFail 'code linting', 'codelint', {
