@@ -92,7 +92,11 @@ def installDependencies (os, wantedNpmVersion, customModules, ignoreScripts = fa
   if (ignoreScripts) {
     run(os, 'npm install --ignore-scripts')
   } else {
-    run(os, 'npm install')
+    if (fileExists('package-lock.json')) {
+      run(os, 'npm ci')
+    } else {
+      run(os, 'npm install')
+    }
   }
   installCustomModules(os, customModules)
 }
