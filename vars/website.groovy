@@ -114,6 +114,7 @@ def call(opts = []) {
               versionsHash = sh(returnStdout: true, script: "ipfs add -Q ./_previous-versions").trim()
               websiteHash = sh(returnStdout: true, script: "ipfs object patch $websiteHash add-link _previous-versions $versionsHash").trim()
               sh "ipfs pin add --progress $websiteHash"
+              sh "curl -s \"https://node" + new Random().nextInt(2) +".preload.ipfs.io/api/v0/refs?r=true&arg=${websiteHash}\""
               cleanWs()
             } catch (err) {
               currentBuild.result = hudson.model.Result.FAILURE.toString()
@@ -142,6 +143,7 @@ def call(opts = []) {
             }
             sh "ipfs refs -r $websiteHash"
             sh "ipfs pin add --progress $websiteHash"
+            sh "curl -s \"https://node" + new Random().nextInt(2) +".preload.ipfs.io/api/v0/refs?r=true&arg=${websiteHash}\""
           }
           def websiteUrl = "https://ipfs.io/ipfs/$websiteHash"
           sh "set +x && curl -X POST -H 'Content-Type: application/json' --data '{\"state\": \"success\", \"target_url\": \"$websiteUrl\", \"description\": \"A rendered preview of this commit\", \"context\": \"Rendered Preview\"}' -H \"Authorization: Bearer \$(cat /tmp/userauthtoken)\" https://api.github.com/repos/$githubOrg/$githubRepo/statuses/$gitCommit"
