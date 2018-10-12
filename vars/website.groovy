@@ -129,18 +129,20 @@ def call(opts = []) {
         return
       }
       node(label: 'master') {
-          lines = nodeMultiaddrs.readLines()
-          lines.each { line ->
-            def process = "ipfs swarm connect $line".execute([], null)
-            println "ipfs swarm connect $line"
-            def output = new StringWriter(), error = new StringWriter()
-            process.waitForProcessOutput(output, error)
-            println "exit value=${process.exitValue()}"
-            println "OUT: $output"
-            println "ERR: $error"
+          withEnv(["IPFS_PATH=/efs/.ipfs"]) {
+            lines = nodeMultiaddrs.readLines()
+            lines.each { line ->
+              def process = "ipfs swarm connect $line".execute(["IPFS_PATH=/efs/.ipfs"], null)
+              println "ipfs swarm connect $line"
+              def output = new StringWriter(), error = new StringWriter()
+              process.waitForProcessOutput(output, error)
+              println "exit value=${process.exitValue()}"
+              println "OUT: $output"
+              println "ERR: $error"
+            }
+            sh "ipfs refs -r $websiteHash"
+            sh "ipfs pin add --progress $websiteHash"
           }
-          sh "ipfs refs -r $websiteHash"
-          sh "ipfs pin add --progress $websiteHash"
           def websiteUrl = "https://ipfs.io/ipfs/$websiteHash"
           sh "set +x && curl -X POST -H 'Content-Type: application/json' --data '{\"state\": \"success\", \"target_url\": \"$websiteUrl\", \"description\": \"A rendered preview of this commit\", \"context\": \"Rendered Preview\"}' -H \"Authorization: Bearer \$(cat /tmp/userauthtoken)\" https://api.github.com/repos/$githubOrg/$githubRepo/statuses/$gitCommit"
           echo "New website: $websiteUrl"
