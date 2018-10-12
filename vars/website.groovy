@@ -129,10 +129,10 @@ def call(opts = []) {
         return
       }
       node(label: 'master') {
-          withEnv(["IPFS_PATH=/efs/.ipfs"]) {
+          withEnv(["IPFS_PATH=/home/ubuntu/.ipfs"]) {
             lines = nodeMultiaddrs.readLines()
             lines.each { line ->
-              def process = "ipfs swarm connect $line".execute(["IPFS_PATH=/efs/.ipfs"], null)
+              def process = "ipfs swarm connect $line".execute(["IPFS_PATH=/home/ubuntu/.ipfs"], null)
               println "ipfs swarm connect $line"
               def output = new StringWriter(), error = new StringWriter()
               process.waitForProcessOutput(output, error)
