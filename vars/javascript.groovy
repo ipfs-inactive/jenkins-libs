@@ -88,6 +88,7 @@ def installDependencies (os, wantedNpmVersion, customModules, ignoreScripts = fa
   // }
   if (isWindows(os)) {
     bat 'npm config set msvs_version 2015 --global'
+    bat 'npm config set python c:\\python27\\python.exe --global'
   }
   if (ignoreScripts) {
     run(os, 'npm install --ignore-scripts')
