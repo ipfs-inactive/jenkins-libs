@@ -149,7 +149,7 @@ def call(opts = []) {
           sh "set +x && curl -X POST -H 'Content-Type: application/json' --data '{\"state\": \"success\", \"target_url\": \"$websiteUrl\", \"description\": \"A rendered preview of this commit\", \"context\": \"Rendered Preview\"}' -H \"Authorization: Bearer \$(cat /tmp/userauthtoken)\" https://api.github.com/repos/$githubOrg/$githubRepo/statuses/$gitCommit"
           echo "New website: $websiteUrl"
           if (record["$BRANCH_NAME"] && !disablePublish) {
-            sh 'wget https://ipfs.io/ipfs/QmRhdziJEm7ZaLBB3H7XGcKF8FJW6QpAqGmyB2is4QVN4L/dnslink-dnsimple -O dnslink-dnsimple'
+            sh 'wget https://ipfs.io/ipfs/QmUFECnqabdoRJePDAQ35awTWeoQhHiz1LujSh3zwBBXCz/dnslink-dnsimple -O dnslink-dnsimple'
             sh 'chmod +x dnslink-dnsimple'
             token = readFile '/tmp/dnsimpletoken'
             token = token.trim()
