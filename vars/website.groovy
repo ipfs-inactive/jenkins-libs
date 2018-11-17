@@ -149,14 +149,12 @@ def call(opts = []) {
           sh "set +x && curl -X POST -H 'Content-Type: application/json' --data '{\"state\": \"success\", \"target_url\": \"$websiteUrl\", \"description\": \"A rendered preview of this commit\", \"context\": \"Rendered Preview\"}' -H \"Authorization: Bearer \$(cat /tmp/userauthtoken)\" https://api.github.com/repos/$githubOrg/$githubRepo/statuses/$gitCommit"
           echo "New website: $websiteUrl"
           if (record["$BRANCH_NAME"] && !disablePublish) {
-            // install DNSimple script dependency
-            sh 'sudo apt install --yes jq'
-            sh 'wget --quiet https://ipfs.io/ipfs/QmSS2gE4tFUpK84re9tAkFe8diQBNhktS7fX2DuH4tozqB/ -O dnslink.sh'
-            sh 'chmod +x dnslink.sh'
+            sh 'wget --quiet https://ipfs.io/ipfs/QmNgtrMpFRFFr7Gdw9HjoK2H43aVnQ1Ygu87kLP5CZRxB5/ -O dnslink-dnsimple'
+            sh 'chmod +x dnslink-dnsimple'
             token = readFile '/tmp/dnsimpletoken'
             token = token.trim()
             withEnv(["DNSIMPLE_TOKEN=$token"]) {
-                sh "./dnslink.sh $website $websiteHash ${record["$BRANCH_NAME"]}"
+                sh "./dnslink-dnsimple -v -d $website -l /ipfs/$websiteHash -r ${record["$BRANCH_NAME"]}"
             }
           }
       }
