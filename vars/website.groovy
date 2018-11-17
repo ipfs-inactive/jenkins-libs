@@ -81,6 +81,8 @@ def call(opts = []) {
               // Get the list of previous versions if it exists
               sh "ipfs get $currentHash/_previous-versions > _previous-versions || true"
 
+              // install DNSimple script dependency
+              sh 'sudo apt install --yes jq'
               // Build Website
               sh 'docker pull ipfs/ci-websites:latest'
               // Create container
