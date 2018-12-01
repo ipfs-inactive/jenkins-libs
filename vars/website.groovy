@@ -135,11 +135,6 @@ def call(opts = []) {
             lines.each { line ->
               def process = "ipfs swarm connect $line".execute(["IPFS_PATH=/home/ubuntu/.ipfs"], null)
               println "ipfs swarm connect $line"
-              def output = new StringWriter(), error = new StringWriter()
-              process.waitForProcessOutput(output, error)
-              println "exit value=${process.exitValue()}"
-              println "OUT: $output"
-              println "ERR: $error"
             }
             sh "ipfs refs -r $websiteHash"
             sh "ipfs pin add --progress $websiteHash"
