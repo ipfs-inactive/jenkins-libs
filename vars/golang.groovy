@@ -18,13 +18,14 @@ def defVal (value, defaultValue) {
 def call(opts = []) {
   def env = defVal(opts['env'], defaultEnv)
   def test = defVal(opts['test'], defaultTest)
+  def goName = '1.11'
   timeout(time: 1, unit: 'HOURS') {
     stage('tests') {
       parallel(
         windows: {
           node(label: 'windows') {
             ansiColor('xterm') {
-              def root = tool name: '1.10.2', type: 'go'
+              def root = tool name: "${goName}", type: 'go'
               def jobNameArr = "${JOB_NAME}"
               def jobName = jobNameArr.split("/")[0..1].join("\\\\").toLowerCase()
               def originalWs = "${WORKSPACE}"
@@ -53,7 +54,7 @@ def call(opts = []) {
         linux: {
           node(label: 'linux') {
             ansiColor('xterm') {
-              def root = tool name: '1.10.2', type: 'go'
+              def root = tool name: "${goName}", type: 'go'
               def jobNameArr = "${JOB_NAME}"
               def jobName = jobNameArr.split("/")[0..1].join("/").toLowerCase()
               def originalWs = "${WORKSPACE}"
@@ -82,7 +83,7 @@ def call(opts = []) {
         macOS: {
           node(label: 'macos') {
             ansiColor('xterm') {
-              def root = tool name: '1.10.2', type: 'go'
+              def root = tool name: "${goName}", type: 'go'
               def jobNameArr = "${JOB_NAME}"
               def jobName = jobNameArr.split("/")[0..1].join("/").toLowerCase()
               def originalWs = "${WORKSPACE}"
