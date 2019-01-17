@@ -54,6 +54,7 @@ def call(opts = []) {
         node(label: 'linux') {
             // Figure out our IP + Multiaddr for master to ensure connection
             nodeMultiaddrs = sh returnStdout: true, script: "ipfs id --format='<addrs>\n'"
+            println nodeMultiaddrs
             def details = checkout scm
 
             // Parse Github Org + Repo
@@ -132,7 +133,9 @@ def call(opts = []) {
       node(label: 'master') {
           withEnv(["IPFS_PATH=/home/ubuntu/.ipfs"]) {
             lines = nodeMultiaddrs.readLines()
+            println lines
             lines.each { line ->
+              println line
               def process = "ipfs swarm connect $line".execute(["IPFS_PATH=/home/ubuntu/.ipfs"], null)
               println "ipfs swarm connect $line"
             }
@@ -156,3 +159,4 @@ def call(opts = []) {
     }
   }
 }
+
