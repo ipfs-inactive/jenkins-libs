@@ -32,10 +32,10 @@ def call(opts = []) {
               ws("${originalWs}\\src\\github.com\\${jobName}") {
                 def goEnv = ["GOROOT=${root}", "GOPATH=${originalWs}", "PATH=$PATH;${root}\\bin;${originalWs}\\bin"]
                 withEnv(goEnv + env) {
+                  checkout scm
                   bat 'go get -v github.com/whyrusleeping/gx'
                   bat 'go get -v github.com/whyrusleeping/gx-go'
                   bat 'go get -v github.com/jstemmer/go-junit-report'
-                  checkout scm
                   bat 'gx --verbose install --global'
                   bat 'gx-go rewrite'
                   try {
@@ -61,10 +61,10 @@ def call(opts = []) {
               ws("${originalWs}/src/github.com/${jobName}") {
                 def goEnv = ["GOROOT=${root}", "GOPATH=${originalWs}", "PATH=$PATH:${root}/bin:${originalWs}/bin"]
                 withEnv(goEnv + env) {
+                  checkout scm
                   sh 'go get -v github.com/whyrusleeping/gx'
                   sh 'go get -v github.com/whyrusleeping/gx-go'
                   sh 'go get -v github.com/jstemmer/go-junit-report'
-                  checkout scm
                   sh 'gx --verbose install --global'
                   sh 'gx-go rewrite'
                   try {
@@ -90,10 +90,10 @@ def call(opts = []) {
               ws("${originalWs}/src/github.com/${jobName}") {
                 def goEnv = ["GOROOT=${root}", "GOPATH=${originalWs}", "PATH=$PATH:${root}/bin:${originalWs}/bin"]
                 withEnv(goEnv + env) {
+                  checkout scm
                   sh 'go get -v github.com/whyrusleeping/gx'
                   sh 'go get -v github.com/whyrusleeping/gx-go'
                   sh 'go get -v github.com/jstemmer/go-junit-report'
-                  checkout scm
                   sh 'gx --verbose install --global'
                   sh 'gx-go rewrite'
                   try {
