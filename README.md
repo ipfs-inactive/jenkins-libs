@@ -34,7 +34,8 @@ Runs `go test` and optionally sharness tests for a Go project on Ubuntu, macOS a
 ```groovy
 golang([
   env: [TEST_NO_FUSE: true], // optional extra environment variables. Already sets CI=true
-  test: 'go test -v ./...' // optional command to run for running tests, defaults to `go test -v ./...`
+  test: 'go test -v ./...', // optional command to run for running tests, defaults to `go test -v ./...`
+  dep: 'go-mod' // optional to make the build use go modules, defaults to gx
 ])
 ```
 
