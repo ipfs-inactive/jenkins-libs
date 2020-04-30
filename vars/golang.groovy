@@ -14,10 +14,12 @@ def defVal (value, defaultValue) {
 
 @Field def defaultEnv = ["CI=true"]
 @Field def defaultTest = "go test -v ./..."
+@Field def defaultDep = "gx"
 
 def call(opts = []) {
   def env = defVal(opts['env'], defaultEnv)
   def test = defVal(opts['test'], defaultTest)
+  def dep = defVal(opts['dep'], defaultDep)
   def goName = '1.11'
   timeout(time: 1, unit: 'HOURS') {
     stage('tests') {
@@ -31,13 +33,20 @@ def call(opts = []) {
               def originalWs = "${WORKSPACE}"
               ws("${originalWs}\\src\\github.com\\${jobName}") {
                 def goEnv = ["GOROOT=${root}", "GOPATH=${originalWs}", "PATH=$PATH;${root}\\bin;${originalWs}\\bin"]
+                if (dep != "gx") {
+                  goEnv.add("GO111MODULE=on")
+                }
                 withEnv(goEnv + env) {
                   checkout scm
-                  bat 'go get -v github.com/whyrusleeping/gx'
-                  bat 'go get -v github.com/whyrusleeping/gx-go'
-                  bat 'go get -v github.com/jstemmer/go-junit-report'
-                  bat 'gx --verbose install --global'
-                  bat 'gx-go rewrite'
+                  if (dep == "gx") {
+                    bat 'go get -v github.com/whyrusleeping/gx'
+                    bat 'go get -v github.com/whyrusleeping/gx-go'
+                    bat 'go get -v github.com/jstemmer/go-junit-report'
+                    bat 'gx --verbose install --global'
+                    bat 'gx-go rewrite'
+                  } else {
+                    bat 'go mod download'
+                  }
                   try {
                     bat test + ' > output & type output'
                     bat 'type output | go-junit-report > junit-report-windows.xml'
@@ -60,13 +69,20 @@ def call(opts = []) {
               def originalWs = "${WORKSPACE}"
               ws("${originalWs}/src/github.com/${jobName}") {
                 def goEnv = ["GOROOT=${root}", "GOPATH=${originalWs}", "PATH=$PATH:${root}/bin:${originalWs}/bin"]
+                if (dep != "gx") {
+                  goEnv.add("GO111MODULE=on")
+                }
                 withEnv(goEnv + env) {
                   checkout scm
-                  sh 'go get -v github.com/whyrusleeping/gx'
-                  sh 'go get -v github.com/whyrusleeping/gx-go'
-                  sh 'go get -v github.com/jstemmer/go-junit-report'
-                  sh 'gx --verbose install --global'
-                  sh 'gx-go rewrite'
+                  if (dep == "gx") {
+                    sh 'go get -v github.com/whyrusleeping/gx'
+                    sh 'go get -v github.com/whyrusleeping/gx-go'
+                    sh 'go get -v github.com/jstemmer/go-junit-report'
+                    sh 'gx --verbose install --global'
+                    sh 'gx-go rewrite'
+                  } else {
+                    sh 'go mod download'
+                  }
                   try {
                     sh test + ' 2>&1 | tee output'
                     sh 'cat output | go-junit-report > junit-report-linux.xml'
@@ -89,13 +105,20 @@ def call(opts = []) {
               def originalWs = "${WORKSPACE}"
               ws("${originalWs}/src/github.com/${jobName}") {
                 def goEnv = ["GOROOT=${root}", "GOPATH=${originalWs}", "PATH=$PATH:${root}/bin:${originalWs}/bin"]
+                if (dep != "gx") {
+                  goEnv.add("GO111MODULE=on")
+                }
                 withEnv(goEnv + env) {
                   checkout scm
-                  sh 'go get -v github.com/whyrusleeping/gx'
-                  sh 'go get -v github.com/whyrusleeping/gx-go'
-                  sh 'go get -v github.com/jstemmer/go-junit-report'
-                  sh 'gx --verbose install --global'
-                  sh 'gx-go rewrite'
+                  if (dep == "gx") {
+                    sh 'go get -v github.com/whyrusleeping/gx'
+                    sh 'go get -v github.com/whyrusleeping/gx-go'
+                    sh 'go get -v github.com/jstemmer/go-junit-report'
+                    sh 'gx --verbose install --global'
+                    sh 'gx-go rewrite'
+                  } else {
+                    sh 'go mod download'
+                  }
                   try {
                     sh test + ' 2>&1 | tee output'
                     sh 'cat output | go-junit-report > junit-report-macos.xml'
