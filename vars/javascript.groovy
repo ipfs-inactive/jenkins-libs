@@ -90,12 +90,12 @@ def installDependencies (os, wantedNpmVersion, customModules, ignoreScripts = fa
     bat 'npm config set msvs_version 2015 --global'
     bat 'npm config set python c:\\python27\\python.exe --global'
   }
+  installCustomModules(os, customModules)
   if (ignoreScripts) {
     run(os, 'npm install --ignore-scripts')
   } else {
     run(os, 'npm install')
   }
-  installCustomModules(os, customModules)
 }
 
 // Function to wrap calls that might make step unstable rather than failing
